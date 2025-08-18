@@ -1,8 +1,239 @@
-<!doctype html>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Test</title>
-<body style="background:#0a0f1a;color:#e6f3ff;font:16px/1.4 system-ui;padding:24px">
-  <h1>It works ✅</h1>
-  <p>This is a test page from spelling.aliffr.com.</p>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Spelling — Kids Mode</title>
+<style>
+  :root { --bg:#0b1020; --panel:#111935; --ink:#e9f3ff; --muted:#a9bad7; --accent:#7dd3fc; --ok:#22c55e; --no:#ef4444; }
+  html,body{height:100%} body{margin:0;background:var(--bg);color:var(--ink);font:18px/1.5 system-ui,-apple-system,Segoe UI,Roboto,Arial}
+  .wrap{max-width:1000px;margin:0 auto;padding:18px}
+  .bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:12px}
+  .sel,.btn{background:#151f44;border:1px solid #253060;color:var(--ink);border-radius:12px;padding:10px 12px;font-weight:700}
+  .btn{cursor:pointer} .btn:active{transform:scale(.98)}
+  .tag{padding:6px 10px;background:#0e1632;border:1px solid #253060;border-radius:999px;color:var(--muted);font-size:12px}
+  .board{display:grid;grid-template-columns: 360px 1fr;gap:14px}
+  @media (max-width:860px){ .board{grid-template-columns: 1fr} }
+  .card{background:var(--panel);border:1px solid #253060;border-radius:18px;box-shadow:0 10px 28px rgba(0,0,0,.35)}
+  .clue{display:grid;place-items:center;height:360px;border-radius:18px}
+  .clue .big{font-size:140px;filter:drop-shadow(0 6px 16px rgba(0,0,0,.35))}
+  .sun{animation:spin 18s linear infinite} @keyframes spin{to{transform:rotate(360deg)}}
+  .wiggle{animation:wig 1.4s ease-in-out infinite} @keyframes wig{0%,100%{transform:rotate(-6deg)}50%{transform:rotate(6deg)}}
+  .pulse{animation:pulse 1.8s ease-in-out infinite} @keyframes pulse{50%{transform:scale(1.08)}}
+  .pane{padding:18px}
+  h1{margin:0 0 6px;font-size:26px}
+  input[type=text]{width:100%;font-size:22px;padding:12px 14px;border-radius:12px;border:1px solid #253060;background:#0d1530;color:var(--ink);outline:none}
+  .row{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:10px}
+  .msg{min-height:30px;margin-top:10px;font-weight:800}
+  .good{color:var(--ok)} .bad{color:var(--no)}
+  .foot{margin-top:6px;color:var(--muted);font-size:12px}
+  /* Confetti bits */
+  .confetti{position:fixed;inset:0;pointer-events:none}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="bar">
+    <strong>📚 Lesson:</strong>
+    <select id="lessonSel" class="sel"></select>
+    <span class="tag">Item <b id="idx">1</b>/<b id="total">7</b></span>
+    <span class="tag">Score: <b id="score">0</b></span>
+    <button id="prevBtn" class="btn">⬅ Prev</button>
+    <button id="nextBtn" class="btn">Next ➡</button>
+    <button id="sayBtn"  class="btn">🔊 Say</button>
+    <button id="hintBtn" class="btn">💡 Hint</button>
+    <button id="revealBtn" class="btn">👀 Reveal</button>
+  </div>
+
+  <div class="board">
+    <!-- CLUE -->
+    <div class="card clue" id="clueBox" aria-hidden="true"></div>
+
+    <!-- PRACTICE -->
+    <div class="card pane">
+      <h1 id="title">Spelling Practice</h1>
+      <input id="answer" type="text" spellcheck="false" placeholder="Type your answer here…" />
+      <div class="row">
+        <button id="checkBtn" class="btn">✅ Check</button>
+        <button id="clearBtn" class="btn">🧽 Clear</button>
+      </div>
+      <div id="msg" class="msg" aria-live="polite"></div>
+      <div class="foot">Tip: Press <b>Enter</b> to check. Sentences don’t need exact capitals or punctuation.</div>
+    </div>
+  </div>
+</div>
+<canvas class="confetti" id="fx"></canvas>
+
+<script>
+/* ---------- CONTENT (your two lists) ---------- */
+const LESSONS = [
+  {
+    id: "2025-08-20-en",
+    title: "20-8-2025 — English",
+    voice: "en-US",
+    items: [
+      { text: "baby",  clue: emoji("👶","pulse") },
+      { text: "key",   clue: emoji("🔑","wiggle") },
+      { text: "money", clue: emoji("💵","pulse") },
+      { text: "sunny", clue: emoji("☀️","sun") },
+      { text: "honey", clue: group([emoji("🍯"), emoji("🐝","wiggle")]) },
+      // #6 — sentence: picture of baby + heart + honey (kids guess the whole sentence)
+      { text: "The baby likes honey.", clue: group([emoji("👶","pulse"), emoji("❤️","pulse"), emoji("🍯")]) , sentence:true },
+      { text: "Where is the key?", clue: group([emoji("🕵️‍♀️"), emoji("🔑","wiggle"), emoji("❓")]) , sentence:true }
+    ]
+  },
+  {
+    id: "2025-08-22-ms",
+    title: "22-8-2025 — Bahasa Melayu",
+    voice: "ms-MY",
+    items: [
+      { text: "surat", clue: emoji("✉️","wiggle") },
+      { text: "semut", clue: emoji("🐜","pulse") },
+      { text: "sayur", clue: emoji("🥦","pulse") },
+      { text: "sijil", clue: svgRibbon() },
+      { text: "sikat", clue: svgComb() },
+      // #6 — sentence: ant + leg animation
+      { text: "Semut gigit kaki saya.", clue: group([emoji("🐜","wiggle"), svgLeg()]) , sentence:true }
+    ]
+  }
+];
+
+/* ---------- UI + LOGIC ---------- */
+const lessonSel = document.getElementById('lessonSel');
+const clueBox   = document.getElementById('clueBox');
+const titleEl   = document.getElementById('title');
+const ans       = document.getElementById('answer');
+const msg       = document.getElementById('msg');
+const idxEl     = document.getElementById('idx');
+const totalEl   = document.getElementById('total');
+const scoreEl   = document.getElementById('score');
+
+const prevBtn   = document.getElementById('prevBtn');
+const nextBtn   = document.getElementById('nextBtn');
+const checkBtn  = document.getElementById('checkBtn');
+const clearBtn  = document.getElementById('clearBtn');
+const sayBtn    = document.getElementById('sayBtn');
+const hintBtn   = document.getElementById('hintBtn');
+const revealBtn = document.getElementById('revealBtn');
+
+let L = LESSONS[0], i = 0, score = 0;
+
+LESSONS.forEach((l, k)=>{
+  const o=document.createElement('option'); o.value=k; o.textContent=l.title;
+  lessonSel.appendChild(o);
+});
+lessonSel.onchange = ()=>{ L = LESSONS[+lessonSel.value]; i=0; score=0; scoreEl.textContent=0; load(); };
+
+function load(){
+  const it = L.items[i];
+  idxEl.textContent = i+1; totalEl.textContent = L.items.length;
+  titleEl.textContent = it.sentence ? "Type the whole sentence" : "Spell the word";
+  ans.value = ""; msg.textContent = "";
+  clueBox.innerHTML = ""; clueBox.appendChild(it.clue);
+  ans.focus();
+}
+prevBtn.onclick = ()=>{ if(i>0){ i--; load(); } };
+nextBtn.onclick = ()=>{ if(i<L.items.length-1){ i++; load(); } };
+
+function normalize(s){
+  // ignore case, trim spaces; for sentences, ignore punctuation
+  return s.toLowerCase().replace(/[.,!?]/g,"").replace(/\s+/g," ").trim();
+}
+
+function check(){
+  const it = L.items[i];
+  const ok = normalize(ans.value) === normalize(it.text);
+  if(ok){
+    msg.innerHTML = `✅ <span class="good">Correct!</span> <b>${it.text}</b>`;
+    score += 10; scoreEl.textContent = score;
+    confetti();
+    speak(L.voice, it.text);
+    // auto-next after a short pause
+    setTimeout(()=>{ if(i<L.items.length-1){ i++; load(); } }, 900);
+  }else{
+    const hint = buildHint(it.text);
+    msg.innerHTML = `❌ <span class="bad">Try again</span> — hint: ${hint}`;
+    speak(L.voice, (L.id.endsWith("ms") ? "Cuba lagi" : "Try again"));
+  }
+}
+checkBtn.onclick = check;
+ans.addEventListener('keydown', e=>{ if(e.key==='Enter') check(); });
+clearBtn.onclick = ()=>{ ans.value=""; ans.focus(); msg.textContent=""; };
+hintBtn.onclick  = ()=>{ const it=L.items[i]; msg.innerHTML = `💡 Hint: ${buildHint(it.text)}`; };
+revealBtn.onclick= ()=>{ const it=L.items[i]; msg.innerHTML = `👀 The answer is: <b>${it.text}</b>`; };
+
+sayBtn.onclick = ()=>{ const it=L.items[i]; speak(L.voice, it.text); };
+
+/* ---------- Helpers ---------- */
+function buildHint(text){
+  const t = text.replace(/[.,!?]/g,"");
+  if(t.includes(" ")){ // sentence: show first/last word
+    const w = t.split(/\s+/);
+    return `<b>${w[0]}</b> … <b>${w[w.length-1]}</b>`;
+  }else{
+    if(t.length<=2) return t;
+    return `${t[0]} ${"_ ".repeat(t.length-2)} ${t[t.length-1]}`;
+  }
+}
+
+function speak(lang, text){
+  if(!('speechSynthesis' in window)) return;
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang = lang; u.rate = 0.95; u.pitch = 1.0;
+  window.speechSynthesis.cancel(); window.speechSynthesis.speak(u);
+}
+
+/* ---------- Clue renderers (emoji/SVG) ---------- */
+function emoji(char, cls=""){ const s=document.createElement('div'); s.className="big "+cls; s.textContent=char; return s; }
+function group(nodes){ const d=document.createElement('div'); d.className="big"; d.style.fontSize="110px"; d.style.display="flex"; d.style.gap="14px"; nodes.forEach(n=>d.appendChild(n)); return d; }
+
+function svgRibbon(){
+  const w=260,h=260,svg=mkSvg(w,h);
+  const g=drawMedal(svg,w,h);
+  return wrapSvg(svg);
+}
+function drawMedal(svg,w,h){
+  const cx=w/2, cy=h/2-10, r=70;
+  circ(svg,cx,cy,r+10,"#1e3a8a");
+  circ(svg,cx,cy,r,"#60a5fa");
+  circ(svg,cx,cy,r-20,"#0b1020");
+  // ribbons
+  poly(svg,[[cx-25,cy+15],[cx-60,cy+120],[cx-5,cy+90]],"#1e3a8a");
+  poly(svg,[[cx+25,cy+15],[cx+60,cy+120],[cx+5,cy+90]],"#1e3a8a");
+  return svg;
+}
+function svgComb(){
+  const w=300,h=220,svg=mkSvg(w,h);
+  rect(svg,40,70,220,40,"#f59e0b",8);
+  for(let x=55;x<=245;x+=20){ rect(svg,x,110,10,70,"#f59e0b",6); }
+  return wrapSvg(svg);
+}
+function svgLeg(){
+  const w=300,h=240,svg=mkSvg(w,h);
+  rect(svg,140,50,40,130,"#f5c9a8",20); // calf
+  rect(svg,140,170,40,50,"#f5c9a8",12); // foot
+  circ(svg,160,60,14,"#f0b998"); // knee highlight
+  return wrapSvg(svg);
+}
+function mkSvg(w,h){ const s=document.createElementNS("http://www.w3.org/2000/svg","svg"); s.setAttribute("viewBox",`0 0 ${w} ${h}`); s.style.width="90%"; s.style.height="90%"; return s; }
+function rect(svg,x,y,w,h,fill,rx=6){ const r=n("rect"); r.setAttribute("x",x); r.setAttribute("y",y); r.setAttribute("width",w); r.setAttribute("height",h); r.setAttribute("rx",rx); r.setAttribute("fill",fill); svg.appendChild(r); }
+function circ(svg,cx,cy,r,fill){ const c=n("circle"); c.setAttribute("cx",cx); c.setAttribute("cy",cy); c.setAttribute("r",r); c.setAttribute("fill",fill); svg.appendChild(c); }
+function poly(svg,pts,fill){ const p=n("polygon"); p.setAttribute("points",pts.map(p=>p.join(",")).join(" ")); p.setAttribute("fill",fill); svg.appendChild(p); }
+function n(tag){ return document.createElementNS("http://www.w3.org/2000/svg",tag); }
+function wrapSvg(s){ const d=document.createElement('div'); d.className="big"; d.appendChild(s); return d; }
+
+/* ---------- Tiny confetti ---------- */
+const fx=document.getElementById('fx'), fctx=fx.getContext('2d'); let W,H; function r(){W=fx.width=innerWidth;H=fx.height=innerHeight} addEventListener('resize',r,{passive:true}); r();
+function confetti(){
+  const bits=[...Array(120)].map(()=>({x:Math.random()*W,y:-10,vx:(Math.random()-0.5)*2,vy:2+Math.random()*4,w:6,h:10,c:`hsl(${180+Math.random()*160} 90% 60%)`,a:Math.random()*Math.PI}));
+  let t=0; (function loop(){
+    fctx.clearRect(0,0,W,H); bits.forEach(b=>{ b.x+=b.vx; b.y+=b.vy; b.a+=0.1; fctx.save(); fctx.translate(b.x,b.y); fctx.rotate(b.a); fctx.fillStyle=b.c; fctx.fillRect(-b.w/2,-b.h/2,b.w,b.h); fctx.restore(); });
+    if((t+=16)<900) requestAnimationFrame(loop); else fctx.clearRect(0,0,W,H);
+  })();
+}
+
+/* ---------- Init ---------- */
+lessonSel.value = 0; load();
+</script>
 </body>
+</html>
