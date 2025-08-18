@@ -6,11 +6,12 @@
 <title>Spelling — Kids Mode</title>
 <style>
   :root{--bg:#0b1020;--panel:#111935;--ink:#e9f3ff;--muted:#a9bad7;--ok:#22c55e;--no:#ef4444}
-  html,body{height:100%} body{margin:0;background:var(--bg);color:var(--ink);font:18px/1.5 system-ui,-apple-system,Segoe UI,Roboto,Arial}
+  html,body{height:100%}
+  body{margin:0;background:var(--bg);color:var(--ink);font:18px/1.5 system-ui,-apple-system,Segoe UI,Roboto,Arial}
   .wrap{max-width:1100px;margin:0 auto;padding:18px;position:relative;z-index:2} /* keep UI above effects */
   .bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:12px}
   .sel,.btn{background:#151f44;border:1px solid #253060;color:var(--ink);border-radius:12px;padding:10px 12px;font-weight:700}
-  .sel{position:relative;z-index:3;pointer-events:auto}
+  .sel{position:relative;z-index:9999;pointer-events:auto}
   #dateSel{min-width:160px}
   .btn{cursor:pointer}.btn:active{transform:scale(.98)}
   .tag{padding:6px 10px;background:#0e1632;border:1px solid #253060;border-radius:999px;color:var(--muted);font-size:12px}
@@ -34,7 +35,7 @@
   .prog{height:10px;background:#0e1632;border:1px solid #253060;border-radius:999px;overflow:hidden}
   .prog>i{display:block;height:100%;background:linear-gradient(90deg,#34d399,#60a5fa);width:0%}
   .star{filter:drop-shadow(0 4px 10px rgba(0,0,0,.35))}
-  .confetti{position:fixed;inset:0;pointer-events:none;z-index:1} /* keep behind UI */
+  .confetti{position:fixed;inset:0;pointer-events:none;z-index:0;display:none} /* behind UI and hidden by default */
 </style>
 </head>
 <body>
@@ -145,6 +146,7 @@ const shuffleBox=document.getElementById('shuffle');
 const datePrev=document.getElementById('datePrev');
 const dateNext=document.getElementById('dateNext');
 
+/* ========== State ========== */
 let LESSONS=ENG, voice="en-US", list=[], i=0, score=0, stars=0;
 
 /* ========== Pickers & load ========== */
@@ -241,7 +243,7 @@ function clueFor(text){
   if(has("purse")||has("dompet")) add("👛");
   if(has("money")||has("duit")) add("💵","pulse");
   if(has("draw")||has("lukis")) add("✏️");
-  if(has("window")||has("tingkap")) add("🪟");
+  if(has("window")||has("tingkap")||has("pintu")||has("door")) add("🪟");
   if(has("arrow")||has("anak panah")) add("🏹");
   if(has("snow")) add("❄️");
   if(has("throw")||has("lempar")) add("🏐");
@@ -254,7 +256,6 @@ function clueFor(text){
   if(has("raket")) add("🎾");
   if(has("reban")||has("ayam")) add("🐔");
   if(has("lampu")||has("light")) add("💡");
-  if(has("pintu")||has("door")) add("🚪");
   if(has("payung")) add("☂️");
   if(has("pisang")||has("banana")) add("🍌");
   if(has("nangka")) add("🥭");
@@ -278,7 +279,6 @@ function clueFor(text){
   if(has("tulis")||has("write")) add("✍️");
   if(has("tidur")||has("sleep")) add("😴");
   if(has("duduk")) add("🪑");
-  if(has("lari")||has("run")) add("🏃");
   if(has("nyanyi")||has("sing")) add("🎤");
   if(has("makan")||has("eat")) add("🍽️");
   if(has("berenang")) add("🏊");
@@ -295,10 +295,19 @@ function shuffle(a){ for(let j=a.length-1;j>0;j--){ const k=(Math.random()*(j+1)
 function updateBar(){ bar.style.width=((i)/Math.max(1,(list.length-1))*100)+"%"; }
 function speak(lang,text){ if(!('speechSynthesis' in window)) return; const u=new SpeechSynthesisUtterance(text); u.lang=lang; u.rate=0.95; u.pitch=1.0; speechSynthesis.cancel(); speechSynthesis.speak(u); }
 
-/* simple confetti */
-const fx=document.getElementById('fx'), ctx=fx.getContext('2d'); let W,H; function rs(){W=fx.width=innerWidth;H=fx.height=innerHeight} addEventListener('resize',rs,{passive:true}); rs();
-function confetti(){ const n=120,b=[...Array(n)].map(()=>({x:Math.random()*W,y:-10,vx:(Math.random()-0.5)*2,vy:2+Math.random()*4,w:6,h:10,c:`hsl(${180+Math.random()*160} 90% 60%)`,a:Math.random()*Math.PI}));
-  let t=0;(function loop(){ctx.clearRect(0,0,W,H);b.forEach(p=>{p.x+=p.vx;p.y+=p.vy;p.a+=0.1;ctx.save();ctx.translate(p.x,p.y);ctx.rotate(p.a);ctx.fillStyle=p.c;ctx.fillRect(-p.w/2,-p.h/2,p.w,p.h);ctx.restore();});if((t+=16)<900)requestAnimationFrame(loop);else ctx.clearRect(0,0,W,H);})();}
+/* Confetti: only show canvas while animating (so it never blocks the dropdown) */
+const fx=document.getElementById('fx'), ctx=fx.getContext('2d'); let W,H;
+function rs(){ W=fx.width=innerWidth; H=fx.height=innerHeight } addEventListener('resize',rs,{passive:true}); rs();
+function confetti(){
+  fx.style.display='block';
+  const n=120,b=[...Array(n)].map(()=>({x:Math.random()*W,y:-10,vx:(Math.random()-0.5)*2,vy:2+Math.random()*4,w:6,h:10,c:`hsl(${180+Math.random()*160} 90% 60%)`,a:Math.random()*Math.PI}));
+  let t=0;(function loop(){
+    ctx.clearRect(0,0,W,H);
+    b.forEach(p=>{p.x+=p.vx;p.y+=p.vy;p.a+=0.1;ctx.save();ctx.translate(p.x,p.y);ctx.rotate(p.a);ctx.fillStyle=p.c;ctx.fillRect(-p.w/2,-p.h/2,p.w,p.h);ctx.restore();});
+    if((t+=16)<900) requestAnimationFrame(loop);
+    else { ctx.clearRect(0,0,W,H); fx.style.display='none'; }
+  })();
+}
 
 /* ========== init ========== */
 swapLang(); // fill dates + load first lesson
