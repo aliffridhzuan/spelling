@@ -5,21 +5,21 @@
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>Spelling — Kids Mode</title>
 <style>
-  :root { --bg:#0b1020; --panel:#111935; --ink:#e9f3ff; --muted:#a9bad7; --accent:#7dd3fc; --ok:#22c55e; --no:#ef4444; }
+  :root{--bg:#0b1020;--panel:#111935;--ink:#e9f3ff;--muted:#a9bad7;--accent:#7dd3fc;--ok:#22c55e;--no:#ef4444}
   html,body{height:100%} body{margin:0;background:var(--bg);color:var(--ink);font:18px/1.5 system-ui,-apple-system,Segoe UI,Roboto,Arial}
-  .wrap{max-width:1000px;margin:0 auto;padding:18px}
+  .wrap{max-width:1100px;margin:0 auto;padding:18px}
   .bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:12px}
   .sel,.btn{background:#151f44;border:1px solid #253060;color:var(--ink);border-radius:12px;padding:10px 12px;font-weight:700}
-  .btn{cursor:pointer} .btn:active{transform:scale(.98)}
+  .btn{cursor:pointer}.btn:active{transform:scale(.98)}
   .tag{padding:6px 10px;background:#0e1632;border:1px solid #253060;border-radius:999px;color:var(--muted);font-size:12px}
-  .board{display:grid;grid-template-columns: 360px 1fr;gap:14px}
-  @media (max-width:860px){ .board{grid-template-columns: 1fr} }
+  .board{display:grid;grid-template-columns:minmax(280px,360px) 1fr;gap:14px}
+  @media (max-width:900px){.board{grid-template-columns:1fr}}
   .card{background:var(--panel);border:1px solid #253060;border-radius:18px;box-shadow:0 10px 28px rgba(0,0,0,.35)}
-  .clue{display:grid;place-items:center;height:360px;border-radius:18px}
-  .clue .big{font-size:140px;filter:drop-shadow(0 6px 16px rgba(0,0,0,.35))}
-  .sun{animation:spin 18s linear infinite} @keyframes spin{to{transform:rotate(360deg)}}
-  .wiggle{animation:wig 1.4s ease-in-out infinite} @keyframes wig{0%,100%{transform:rotate(-6deg)}50%{transform:rotate(6deg)}}
-  .pulse{animation:pulse 1.8s ease-in-out infinite} @keyframes pulse{50%{transform:scale(1.08)}}
+  .clue{display:grid;place-items:center;height:360px;border-radius:18px;overflow:hidden;padding:12px}
+  .clue .big{line-height:1;display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:14px;max-width:100%;font-size:clamp(72px,12vw,140px);filter:drop-shadow(0 6px 16px rgba(0,0,0,.35))}
+  .sun{animation:spin 18s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}
+  .wiggle{animation:wig 1.4s ease-in-out infinite}@keyframes wig{0%,100%{transform:rotate(-6deg)}50%{transform:rotate(6deg)}}
+  .pulse{animation:pulse 1.8s ease-in-out infinite}@keyframes pulse{50%{transform:scale(1.08)}}
   .pane{padding:18px}
   h1{margin:0 0 6px;font-size:26px}
   input[type=text]{width:100%;font-size:22px;padding:12px 14px;border-radius:12px;border:1px solid #253060;background:#0d1530;color:var(--ink);outline:none}
@@ -27,31 +27,45 @@
   .msg{min-height:30px;margin-top:10px;font-weight:800}
   .good{color:var(--ok)} .bad{color:var(--no)}
   .foot{margin-top:6px;color:var(--muted);font-size:12px}
-  /* Confetti bits */
+  .barR{margin-left:auto;display:flex;gap:10px;align-items:center}
+  .prog{height:10px;background:#0e1632;border:1px solid #253060;border-radius:999px;overflow:hidden}
+  .prog>i{display:block;height:100%;background:linear-gradient(90deg,#34d399,#60a5fa);width:0%}
+  .star{filter:drop-shadow(0 4px 10px rgba(0,0,0,.35))}
   .confetti{position:fixed;inset:0;pointer-events:none}
 </style>
 </head>
 <body>
 <div class="wrap">
   <div class="bar">
-    <strong>📚 Lesson:</strong>
-    <select id="lessonSel" class="sel"></select>
-    <span class="tag">Item <b id="idx">1</b>/<b id="total">7</b></span>
-    <span class="tag">Score: <b id="score">0</b></span>
-    <button id="prevBtn" class="btn">⬅ Prev</button>
-    <button id="nextBtn" class="btn">Next ➡</button>
-    <button id="sayBtn"  class="btn">🔊 Say</button>
-    <button id="hintBtn" class="btn">💡 Hint</button>
-    <button id="revealBtn" class="btn">👀 Reveal</button>
+    <strong>🌐 Language:</strong>
+    <select id="langSel" class="sel">
+      <option value="en">English (Wed)</option>
+      <option value="ms">Bahasa Melayu (Jumaat)</option>
+    </select>
+    <strong style="margin-left:8px">📅 Date:</strong>
+    <select id="dateSel" class="sel"></select>
+
+    <span class="tag">Item <b id="idx">1</b>/<b id="total">1</b></span>
+    <span class="tag">Score: <b id="score">0</b> <span id="stars" class="star">⭐️0</span></span>
+
+    <div class="barR">
+      <label class="tag" style="cursor:pointer">
+        <input type="checkbox" id="shuffle" style="vertical-align:-2px;margin-right:6px">Shuffle
+      </label>
+      <div class="prog" style="width:220px"><i id="bar"></i></div>
+      <button id="prevBtn" class="btn">⬅ Prev</button>
+      <button id="nextBtn" class="btn">Next ➡</button>
+      <button id="sayBtn"  class="btn">🔊 Say</button>
+      <button id="hintBtn" class="btn">💡 Hint</button>
+      <button id="revealBtn" class="btn">👀 Reveal</button>
+    </div>
   </div>
 
   <div class="board">
-    <!-- CLUE -->
     <div class="card clue" id="clueBox" aria-hidden="true"></div>
 
-    <!-- PRACTICE -->
     <div class="card pane">
-      <h1 id="title">Spelling Practice</h1>
+      <h1 id="title">Type the word</h1>
       <input id="answer" type="text" spellcheck="false" placeholder="Type your answer here…" />
       <div class="row">
         <button id="checkBtn" class="btn">✅ Check</button>
@@ -65,175 +79,209 @@
 <canvas class="confetti" id="fx"></canvas>
 
 <script>
-/* ---------- CONTENT (your two lists) ---------- */
-const LESSONS = [
-  {
-    id: "2025-08-20-en",
-    title: "20-8-2025 — English",
-    voice: "en-US",
-    items: [
-      { text: "baby",  clue: emoji("👶","pulse") },
-      { text: "key",   clue: emoji("🔑","wiggle") },
-      { text: "money", clue: emoji("💵","pulse") },
-      { text: "sunny", clue: emoji("☀️","sun") },
-      { text: "honey", clue: group([emoji("🍯"), emoji("🐝","wiggle")]) },
-      // #6 — sentence: picture of baby + heart + honey (kids guess the whole sentence)
-      { text: "The baby likes honey.", clue: group([emoji("👶","pulse"), emoji("❤️","pulse"), emoji("🍯")]) , sentence:true },
-      { text: "Where is the key?", clue: group([emoji("🕵️‍♀️"), emoji("🔑","wiggle"), emoji("❓")]) , sentence:true }
-    ]
-  },
-  {
-    id: "2025-08-22-ms",
-    title: "22-8-2025 — Bahasa Melayu",
-    voice: "ms-MY",
-    items: [
-      { text: "surat", clue: emoji("✉️","wiggle") },
-      { text: "semut", clue: emoji("🐜","pulse") },
-      { text: "sayur", clue: emoji("🥦","pulse") },
-      { text: "sijil", clue: svgRibbon() },
-      { text: "sikat", clue: svgComb() },
-      // #6 — sentence: ant + leg animation
-      { text: "Semut gigit kaki saya.", clue: group([emoji("🐜","wiggle"), svgLeg()]) , sentence:true }
-    ]
-  }
-];
+/* ---------- lesson data (from your sheets) ---------- */
+/* helpers to mark sentence items */
+const S = t => ({text:t, sentence:true});
+const W = t => ({text:t});
 
-/* ---------- UI + LOGIC ---------- */
-const lessonSel = document.getElementById('lessonSel');
-const clueBox   = document.getElementById('clueBox');
-const titleEl   = document.getElementById('title');
-const ans       = document.getElementById('answer');
-const msg       = document.getElementById('msg');
-const idxEl     = document.getElementById('idx');
-const totalEl   = document.getElementById('total');
-const scoreEl   = document.getElementById('score');
+const BM = {
+  "15-8-2025": [W("rumah"),W("reban"),W("raket"),W("roket"),W("robot"),S("Rumah ini besar.")],
+  "22-8-2025": [W("surat"),W("semut"),W("sayur"),W("sijil"),W("sikat"),S("Semut gigit kaki saya.")],
+  "29-8-2025": [W("tidur"),W("tolak"),W("tebal"),W("tutup"),W("tasik"),S("Buku kamus ini tebal.")],
+  "12-9-2025": [W("baldi"),W("derma"),W("lampu"),W("pintu"),W("cikgu"),W("bendi"),S("Ini cikgu saya."),S("Nenek beli bendi.")],
+  "26-9-2025": [W("cermin"),W("kompas"),W("rumput"),W("pondok"),W("tanduk"),W("rambut"),S("Kakak beli cincin baru."),S("Rambut adik panjang.")],
+  "3-10-2025":  [W("pisang"),W("bangku"),W("payung"),W("jagung"),W("mangkuk"),W("tongkat"),W("nangka"),S("Saya suka makan jagung."),S("Kakak ada payung baru.")],
+  "10-10-2025": [W("tupai"),W("cakoi"),W("limau"),W("gerai"),W("pantai"),W("kedai"),S("Emak pergi ke kedai."),S("Su Lin beli petai.")],
+  "17-10-2025": [W("nyanyi"),W("khemah"),W("bunga"),W("tangan"),W("Khamis"),W("penyu"),W("singa"),W("tanya"),S("Hari ini hari Khamis."),S("Bunga mawar itu cantik.")],
+  "31-10-2025": [W("sekolah"),W("basikal"),W("bendera"),W("harimau"),W("jambatan"),W("kemeja"),W("sembilan"),W("tomato"),W("cendawan")],
+  "7-11-2025":  [W("atas"),W("depan"),W("bawah"),W("tepi"),W("belakang"),W("dalam"),S("Di atas meja ada buku."),S("Di dalam bakul ada bunga.")],
+  "14-11-2025": [W("cuci"),W("baca"),W("beli"),W("tulis"),W("lompat"),W("tidur"),W("duduk"),W("lari"),W("nyanyi"),W("makan")],
+  "21-11-2025": [W("berenang"),W("melukis"),W("menyiram"),W("menyapu"),W("menyusun"),W("menulis"),W("membaca"),W("menari")]
+};
 
-const prevBtn   = document.getElementById('prevBtn');
-const nextBtn   = document.getElementById('nextBtn');
-const checkBtn  = document.getElementById('checkBtn');
-const clearBtn  = document.getElementById('clearBtn');
-const sayBtn    = document.getElementById('sayBtn');
-const hintBtn   = document.getElementById('hintBtn');
-const revealBtn = document.getElementById('revealBtn');
+const ENG = {
+  "13-8-2025": [W("day"),W("way"),W("tray"),W("they"),W("obey"),S("What day is today?"),S("Where did they go?")],
+  "20-8-2025": [W("baby"),W("key"),W("money"),W("sunny"),W("honey"),S("The baby likes honey."),S("Where is the key?")],
+  "27-8-2025": [W("sky"),W("find"),W("mind"),W("cry"),W("blind"),S("The sky is blue."),S("The old man is blind.")],
+  "3-9-2025":  [W("tonight"),W("thigh"),W("bright"),W("high"),W("light"),S("The light is bright.")],
+  "10-9-2025": [W("throw"),W("snow"),W("crow"),W("window"),W("arrow"),S("Please throw the ball."),S("The arrow is sharp.")],
+  "24-9-2025": [W("glue"),W("fruit"),W("fuel"),W("suit"),W("juice"),S("I like fruit juice."),S("I need some glue.")],
+  "1-10-2025": [W("screw"),W("crew"),W("few"),W("new"),W("chew"),S("You must chew your food."),S("The car is new.")],
+  "8-10-2025": [W("germ"),W("bird"),W("paper"),W("skirt"),W("water"),W("stir"),S("The bird is drinking water."),S("I have a red skirt.")],
+  "15-10-2025":[W("nurse"),W("purse"),W("surf"),W("curl"),W("fur"),W("burn"),S("The dog has white fur."),S("The money is in the purse.")],
+  "29-10-2025":[W("draw"),W("paw"),W("crawl"),W("yawn"),W("prawn"),W("straw"),S("I can draw well."),S("The straw is in the cup.")],
+  "5-11-2025": [W("fork"),W("torch"),W("sword"),W("corn"),W("horn"),W("forty"),S("There are forty forks."),S("The corn is tasty.")],
+  "12-11-2025":[W("tall"),W("talk"),W("wall"),W("fall"),W("walk"),W("chalk"),W("call"),W("stalk"),S("I can fall from the tall wall.")]
+};
 
-let L = LESSONS[0], i = 0, score = 0;
+/* ---------- UI references ---------- */
+const langSel=document.getElementById('langSel');
+const dateSel=document.getElementById('dateSel');
+const clueBox=document.getElementById('clueBox');
+const titleEl=document.getElementById('title');
+const ans=document.getElementById('answer');
+const msg=document.getElementById('msg');
+const idxEl=document.getElementById('idx');
+const totalEl=document.getElementById('total');
+const scoreEl=document.getElementById('score');
+const starsEl=document.getElementById('stars');
+const bar=document.getElementById('bar');
 
-LESSONS.forEach((l, k)=>{
-  const o=document.createElement('option'); o.value=k; o.textContent=l.title;
-  lessonSel.appendChild(o);
-});
-lessonSel.onchange = ()=>{ L = LESSONS[+lessonSel.value]; i=0; score=0; scoreEl.textContent=0; load(); };
+const prevBtn=document.getElementById('prevBtn');
+const nextBtn=document.getElementById('nextBtn');
+const checkBtn=document.getElementById('checkBtn');
+const clearBtn=document.getElementById('clearBtn');
+const sayBtn=document.getElementById('sayBtn');
+const hintBtn=document.getElementById('hintBtn');
+const revealBtn=document.getElementById('revealBtn');
+const shuffleBox=document.getElementById('shuffle');
 
-function load(){
-  const it = L.items[i];
-  idxEl.textContent = i+1; totalEl.textContent = L.items.length;
-  titleEl.textContent = it.sentence ? "Type the whole sentence" : "Spell the word";
-  ans.value = ""; msg.textContent = "";
-  clueBox.innerHTML = ""; clueBox.appendChild(it.clue);
-  ans.focus();
+let LESSONS=ENG, voice="en-US", list=[], i=0, score=0, stars=0;
+
+/* ---------- build pickers ---------- */
+function fillDates(){
+  dateSel.innerHTML="";
+  Object.keys(LESSONS).forEach((d,k)=>{
+    const o=document.createElement('option'); o.value=d; o.textContent=d; dateSel.appendChild(o);
+  });
+  dateSel.selectedIndex=0;
 }
-prevBtn.onclick = ()=>{ if(i>0){ i--; load(); } };
-nextBtn.onclick = ()=>{ if(i<L.items.length-1){ i++; load(); } };
+function swapLang(){
+  if(langSel.value==='en'){ LESSONS=ENG; voice='en-US'; }
+  else{ LESSONS=BM; voice='ms-MY'; }
+  fillDates(); loadDate();
+}
+langSel.onchange=swapLang;
+
+/* ---------- lesson loading ---------- */
+function loadDate(){
+  const d=dateSel.value;
+  list = LESSONS[d].slice();
+  if(shuffleBox.checked){ shuffle(list); }
+  i=0; score=0; stars=0;
+  scoreEl.textContent=score; starsEl.textContent='⭐️'+stars;
+  totalEl.textContent=list.length;
+  loadItem();
+}
+dateSel.onchange=loadDate;
+shuffleBox.onchange=()=>loadDate();
+
+/* ---------- per-item ---------- */
+function loadItem(){
+  const it=list[i];
+  idxEl.textContent=i+1;
+  titleEl.textContent = it.sentence ? "Type the whole sentence" : "Spell the word";
+  clueBox.innerHTML=""; clueBox.appendChild(clueFor(it.text));
+  ans.value=""; msg.textContent="";
+  ans.focus();
+  updateBar();
+}
 
 function normalize(s){
-  // ignore case, trim spaces; for sentences, ignore punctuation
   return s.toLowerCase().replace(/[.,!?]/g,"").replace(/\s+/g," ").trim();
 }
-
 function check(){
-  const it = L.items[i];
-  const ok = normalize(ans.value) === normalize(it.text);
+  const it=list[i];
+  const ok = normalize(ans.value)===normalize(it.text);
   if(ok){
-    msg.innerHTML = `✅ <span class="good">Correct!</span> <b>${it.text}</b>`;
-    score += 10; scoreEl.textContent = score;
+    msg.innerHTML=`✅ <span class="good">Correct!</span> <b>${it.text}</b>`;
+    score+=10; scoreEl.textContent=score;
+    stars++; starsEl.textContent='⭐️'+stars;
     confetti();
-    speak(L.voice, it.text);
-    // auto-next after a short pause
-    setTimeout(()=>{ if(i<L.items.length-1){ i++; load(); } }, 900);
-  }else{
-    const hint = buildHint(it.text);
-    msg.innerHTML = `❌ <span class="bad">Try again</span> — hint: ${hint}`;
-    speak(L.voice, (L.id.endsWith("ms") ? "Cuba lagi" : "Try again"));
+    speak(voice,it.text);
+    setTimeout(()=>{ if(i<list.length-1){ i++; loadItem(); } else { msg.innerHTML += "<br>🎉 Great job! Lesson finished."; } }, 850);
+  } else {
+    const hint=hintFor(it.text);
+    msg.innerHTML=`❌ <span class="bad">Try again</span> — hint: ${hint}`;
+    speak(voice, langSel.value==='en' ? "Try again" : "Cuba lagi");
   }
 }
-checkBtn.onclick = check;
-ans.addEventListener('keydown', e=>{ if(e.key==='Enter') check(); });
-clearBtn.onclick = ()=>{ ans.value=""; ans.focus(); msg.textContent=""; };
-hintBtn.onclick  = ()=>{ const it=L.items[i]; msg.innerHTML = `💡 Hint: ${buildHint(it.text)}`; };
-revealBtn.onclick= ()=>{ const it=L.items[i]; msg.innerHTML = `👀 The answer is: <b>${it.text}</b>`; };
+checkBtn.onclick=check;
+ans.addEventListener('keydown',e=>{ if(e.key==='Enter') check(); });
+clearBtn.onclick=()=>{ ans.value=""; ans.focus(); msg.textContent=""; };
+prevBtn.onclick=()=>{ if(i>0){ i--; loadItem(); } };
+nextBtn.onclick=()=>{ if(i<list.length-1){ i++; loadItem(); } };
+sayBtn.onclick =()=>{ const it=list[i]; speak(voice,it.text); };
+hintBtn.onclick=()=>{ const it=list[i]; msg.innerHTML = "💡 Hint: "+hintFor(it.text); };
+revealBtn.onclick=()=>{ const it=list[i]; msg.innerHTML = "👀 The answer is: <b>"+it.text+"</b>"; };
 
-sayBtn.onclick = ()=>{ const it=L.items[i]; speak(L.voice, it.text); };
-
-/* ---------- Helpers ---------- */
-function buildHint(text){
-  const t = text.replace(/[.,!?]/g,"");
-  if(t.includes(" ")){ // sentence: show first/last word
-    const w = t.split(/\s+/);
-    return `<b>${w[0]}</b> … <b>${w[w.length-1]}</b>`;
-  }else{
-    if(t.length<=2) return t;
-    return `${t[0]} ${"_ ".repeat(t.length-2)} ${t[t.length-1]}`;
-  }
+/* ---------- hints & clues ---------- */
+function hintFor(text){
+  const t=text.replace(/[.,!?]/g,"");
+  if(t.includes(" ")){ const w=t.split(/\s+/); return `<b>${w[0]}</b> … <b>${w[w.length-1]}</b>`; }
+  if(t.length<=2) return t;
+  return `${t[0]} ${"_ ".repeat(t.length-2)} ${t[t.length-1]}`;
 }
 
-function speak(lang, text){
+function clueFor(text){
+  // try to assemble emoji picture based on keywords
+  const t=normalize(text);
+  const d=document.createElement('div'); d.className="big";
+  const add=(e,cls="")=>{ const el=document.createElement('div'); el.textContent=e; el.className="big "+cls; d.appendChild(el); };
+  const has=k=>t.includes(k);
+
+  // sentences: combine key nouns
+  if(has("baby")) add("👶","pulse");
+  if(has("honey")||has("madu")) add("🍯");
+  if(has("key")||has("kunci")) add("🔑","wiggle");
+  if(has("sun")||has("sunny")||has("matahari")) add("☀️","sun");
+  if(has("sky")||has("langit")) add("🌤️","sun");
+  if(has("glue")||has("gam")) add("🧪");
+  if(has("straw")) add("🥤");
+  if(has("bird")||has("burung")) add("🐦");
+  if(has("ant")||has("semut")) add("🐜","wiggle");
+  if(has("leg")||has("kaki")) add("🦵");
+  if(has("fruit")||has("buah")) add("🍎");
+  if(has("corn")||has("jagung")) add("🌽");
+  if(has("car")) add("🚗");
+  if(has("fork")) add("🍴");
+  if(has("nurse")) add("👩‍⚕️");
+  if(has("purse")) add("👜");
+  if(has("money")||has("duit")) add("💵","pulse");
+  if(has("draw")) add("✏️");
+  if(has("window")||has("pintu")) add("🪟");
+  if(has("arrow")) add("🏹");
+  if(has("snow")) add("❄️");
+  if(has("throw")||has("lempar")) add("🏐");
+  if(has("walk")||has("lari")) add("🚶");
+  if(has("tall")||has("tinggi")||has("wall")) add("🧱");
+  if(has("school")||has("sekolah")) add("🏫");
+  if(has("rumah")||has("house")) add("🏠");
+  if(has("robot")) add("🤖");
+  if(has("rocket")||has("roket")) add("🚀");
+  if(has("lampu")||has("light")) add("💡");
+  if(has("payung")) add("☂️");
+  if(has("pisang")||has("banana")) add("🍌");
+  if(has("nangka")) add("🥭");
+  if(has("mangkok")||has("mangkuk")) add("🥣");
+  if(has("tongkat")) add("🦯");
+
+  // if nothing added (rare), show big first letter
+  if(!d.childNodes.length){
+    const el=document.createElement('div'); el.className="big"; el.textContent=text[0].toUpperCase(); d.appendChild(el);
+  }
+  return d;
+}
+
+/* ---------- utilities ---------- */
+function shuffle(a){ for(let j=a.length-1;j>0;j--){ const k= (Math.random()* (j+1))|0; [a[j],a[k]]=[a[k],a[j]]; } }
+function updateBar(){ bar.style.width = ((i)/Math.max(1,(list.length-1)) * 100) + "%"; }
+
+function speak(lang,text){
   if(!('speechSynthesis' in window)) return;
-  const u = new SpeechSynthesisUtterance(text);
-  u.lang = lang; u.rate = 0.95; u.pitch = 1.0;
-  window.speechSynthesis.cancel(); window.speechSynthesis.speak(u);
+  const u=new SpeechSynthesisUtterance(text); u.lang=lang; u.rate=0.95; u.pitch=1.0;
+  speechSynthesis.cancel(); speechSynthesis.speak(u);
 }
 
-/* ---------- Clue renderers (emoji/SVG) ---------- */
-function emoji(char, cls=""){ const s=document.createElement('div'); s.className="big "+cls; s.textContent=char; return s; }
-function group(nodes){ const d=document.createElement('div'); d.className="big"; d.style.fontSize="110px"; d.style.display="flex"; d.style.gap="14px"; nodes.forEach(n=>d.appendChild(n)); return d; }
-
-function svgRibbon(){
-  const w=260,h=260,svg=mkSvg(w,h);
-  const g=drawMedal(svg,w,h);
-  return wrapSvg(svg);
-}
-function drawMedal(svg,w,h){
-  const cx=w/2, cy=h/2-10, r=70;
-  circ(svg,cx,cy,r+10,"#1e3a8a");
-  circ(svg,cx,cy,r,"#60a5fa");
-  circ(svg,cx,cy,r-20,"#0b1020");
-  // ribbons
-  poly(svg,[[cx-25,cy+15],[cx-60,cy+120],[cx-5,cy+90]],"#1e3a8a");
-  poly(svg,[[cx+25,cy+15],[cx+60,cy+120],[cx+5,cy+90]],"#1e3a8a");
-  return svg;
-}
-function svgComb(){
-  const w=300,h=220,svg=mkSvg(w,h);
-  rect(svg,40,70,220,40,"#f59e0b",8);
-  for(let x=55;x<=245;x+=20){ rect(svg,x,110,10,70,"#f59e0b",6); }
-  return wrapSvg(svg);
-}
-function svgLeg(){
-  const w=300,h=240,svg=mkSvg(w,h);
-  rect(svg,140,50,40,130,"#f5c9a8",20); // calf
-  rect(svg,140,170,40,50,"#f5c9a8",12); // foot
-  circ(svg,160,60,14,"#f0b998"); // knee highlight
-  return wrapSvg(svg);
-}
-function mkSvg(w,h){ const s=document.createElementNS("http://www.w3.org/2000/svg","svg"); s.setAttribute("viewBox",`0 0 ${w} ${h}`); s.style.width="90%"; s.style.height="90%"; return s; }
-function rect(svg,x,y,w,h,fill,rx=6){ const r=n("rect"); r.setAttribute("x",x); r.setAttribute("y",y); r.setAttribute("width",w); r.setAttribute("height",h); r.setAttribute("rx",rx); r.setAttribute("fill",fill); svg.appendChild(r); }
-function circ(svg,cx,cy,r,fill){ const c=n("circle"); c.setAttribute("cx",cx); c.setAttribute("cy",cy); c.setAttribute("r",r); c.setAttribute("fill",fill); svg.appendChild(c); }
-function poly(svg,pts,fill){ const p=n("polygon"); p.setAttribute("points",pts.map(p=>p.join(",")).join(" ")); p.setAttribute("fill",fill); svg.appendChild(p); }
-function n(tag){ return document.createElementNS("http://www.w3.org/2000/svg",tag); }
-function wrapSvg(s){ const d=document.createElement('div'); d.className="big"; d.appendChild(s); return d; }
-
-/* ---------- Tiny confetti ---------- */
-const fx=document.getElementById('fx'), fctx=fx.getContext('2d'); let W,H; function r(){W=fx.width=innerWidth;H=fx.height=innerHeight} addEventListener('resize',r,{passive:true}); r();
+/* ---------- confetti ---------- */
+const fx=document.getElementById('fx'), ctx=fx.getContext('2d'); let W,H; function rs(){W=fx.width=innerWidth; H=fx.height=innerHeight;} addEventListener('resize',rs,{passive:true}); rs();
 function confetti(){
-  const bits=[...Array(120)].map(()=>({x:Math.random()*W,y:-10,vx:(Math.random()-0.5)*2,vy:2+Math.random()*4,w:6,h:10,c:`hsl(${180+Math.random()*160} 90% 60%)`,a:Math.random()*Math.PI}));
-  let t=0; (function loop(){
-    fctx.clearRect(0,0,W,H); bits.forEach(b=>{ b.x+=b.vx; b.y+=b.vy; b.a+=0.1; fctx.save(); fctx.translate(b.x,b.y); fctx.rotate(b.a); fctx.fillStyle=b.c; fctx.fillRect(-b.w/2,-b.h/2,b.w,b.h); fctx.restore(); });
-    if((t+=16)<900) requestAnimationFrame(loop); else fctx.clearRect(0,0,W,H);
-  })();
+  const n=120,b=[...Array(n)].map(()=>({x:Math.random()*W,y:-10,vx:(Math.random()-0.5)*2,vy:2+Math.random()*4,w:6,h:10,c:`hsl(${180+Math.random()*160} 90% 60%)`,a:Math.random()*Math.PI}));
+  let t=0; (function loop(){ ctx.clearRect(0,0,W,H); b.forEach(p=>{p.x+=p.vx;p.y+=p.vy;p.a+=0.1; ctx.save(); ctx.translate(p.x,p.y); ctx.rotate(p.a); ctx.fillStyle=p.c; ctx.fillRect(-p.w/2,-p.h/2,p.w,p.h); ctx.restore(); }); if((t+=16)<900) requestAnimationFrame(loop); else ctx.clearRect(0,0,W,H); })();
 }
 
-/* ---------- Init ---------- */
-lessonSel.value = 0; load();
+/* ---------- init ---------- */
+swapLang(); // fills dates and loads first lesson
 </script>
 </body>
 </html>
