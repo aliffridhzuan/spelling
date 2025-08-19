@@ -3,72 +3,80 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Spelling — Kids Mode</title>
+<title>Spelling — Mini (EN / BM / 中文)</title>
 <style>
   :root{--bg:#0b1020;--panel:#111935;--ink:#e9f3ff;--muted:#a9bad7;--ok:#22c55e;--no:#ef4444;--chip:#151f44;--chip-b:#253060;--accent:#60a5fa}
-  html,body{height:100%}
-  body{margin:0;background:var(--bg);color:var(--ink);font:18px/1.5 system-ui,-apple-system,Segoe UI,Roboto,Arial}
+  html,body{height:100%} body{margin:0;background:var(--bg);color:var(--ink);font:18px/1.5 system-ui,-apple-system,Segoe UI,Roboto,Arial}
+  .wrap{max-width:1000px;margin:0 auto;padding:18px;position:relative;z-index:2}
 
-  .wrap{max-width:1100px;margin:0 auto;padding:18px;position:relative;z-index:2}
-
-  /* top controls */
-  .bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:12px}
-  .btn{background:var(--chip);border:1px solid var(--chip-b);color:var(--ink);border-radius:12px;padding:10px 12px;font-weight:700;cursor:pointer}
-  .btn:active{transform:scale(.98)}
-
-  /* language tabs */
-  .tabs{display:flex;gap:8px}
+  /* tabs + chips */
+  .tabs{display:flex;gap:8px;margin-bottom:10px}
   .tab{background:var(--chip);border:1px solid var(--chip-b);border-radius:999px;padding:8px 14px;font-weight:800;cursor:pointer}
   .tab[aria-pressed="true"]{background:var(--accent);color:#0a1020;border-color:#2b5fb5}
-
-  /* date list chips */
-  .dates-wrap{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
-  .dates{display:flex;gap:8px;flex-wrap:wrap;max-height:120px;overflow:auto;padding:6px;border-radius:12px;background:#0e1632;border:1px solid var(--chip-b)}
+  .dates{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
   .chip{background:var(--chip);border:1px solid var(--chip-b);color:var(--ink);border-radius:999px;padding:8px 12px;font-weight:700;cursor:pointer;white-space:nowrap}
   .chip.active{background:var(--accent);color:#0a1020;border-color:#2b5fb5}
 
+  .bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:10px}
   .tag{padding:6px 10px;background:#0e1632;border:1px solid var(--chip-b);border-radius:999px;color:var(--muted);font-size:12px}
-  .barR{margin-left:auto;display:flex;gap:10px;align-items:center}
+  .btn{background:var(--chip);border:1px solid var(--chip-b);color:var(--ink);border-radius:12px;padding:10px 12px;font-weight:700;cursor:pointer}
+  .btn:active{transform:scale(.98)}
   .prog{height:10px;background:#0e1632;border:1px solid var(--chip-b);border-radius:999px;overflow:hidden}
   .prog>i{display:block;height:100%;background:linear-gradient(90deg,#34d399,#60a5fa);width:0%}
+  .barR{margin-left:auto;display:flex;gap:10px;align-items:center}
   .star{filter:drop-shadow(0 4px 10px rgba(0,0,0,.35))}
 
+  /* info panel (instructions) */
+  .info{background:#0f1840;border:1px solid #243169;border-radius:14px;padding:10px 14px;color:#cfe1ff;margin-bottom:12px}
+  .info b{color:#fff}
+
   /* board */
-  .board{display:grid;grid-template-columns:minmax(280px,360px) 1fr;gap:14px}
+  .board{display:grid;grid-template-columns:minmax(260px,340px) 1fr;gap:14px}
   @media (max-width:900px){.board{grid-template-columns:1fr}}
 
   .card{background:var(--panel);border:1px solid var(--chip-b);border-radius:18px;box-shadow:0 10px 28px rgba(0,0,0,.35)}
-  .clue{display:grid;place-items:center;height:360px;border-radius:18px;overflow:hidden;padding:12px}
+  .clue{display:grid;place-items:center;height:340px;border-radius:18px;overflow:hidden;padding:12px}
   .clue .big{line-height:1;display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:14px;max-width:100%;
-             font-size:clamp(72px,12vw,140px);filter:drop-shadow(0 6px 16px rgba(0,0,0,.35))}
+             font-size:clamp(72px,12vw,136px);filter:drop-shadow(0 6px 16px rgba(0,0,0,.35))}
   .sun{animation:spin 18s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}
   .wiggle{animation:wig 1.4s ease-in-out infinite}@keyframes wig{0%,100%{transform:rotate(-6deg)}50%{transform:rotate(6deg)}}
   .pulse{animation:pulse 1.8s ease-in-out infinite}@keyframes pulse{50%{transform:scale(1.08)}}
 
   .pane{padding:18px}
-  h1{margin:0 0 6px;font-size:26px}
+  h1{margin:0 0 6px;font-size:24px}
   input[type=text]{width:100%;font-size:22px;padding:12px 14px;border-radius:12px;border:1px solid var(--chip-b);background:#0d1530;color:var(--ink);outline:none}
   .row{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:10px}
   .msg{min-height:30px;margin-top:10px;font-weight:800}
   .good{color:var(--ok)} .bad{color:var(--no)}
   .foot{margin-top:6px;color:var(--muted);font-size:12px}
 
-  .confetti{position:fixed;inset:0;pointer-events:none;z-index:0;display:none} /* behind UI and hidden by default */
+  /* sentence / character builder */
+  .builder{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+  .piece{background:#101a3a;border:1px dashed #2a3973;color:#cfe1ff;border-radius:10px;padding:8px 12px;cursor:pointer}
+  .piece.used{opacity:.35;pointer-events:none}
+
+  .confetti{position:fixed;inset:0;pointer-events:none;z-index:0;display:none}
 </style>
 </head>
 <body>
 <div class="wrap">
 
-  <!-- language tabs + score -->
-  <div class="bar">
-    <div class="tabs" role="tablist" aria-label="Language">
-      <button id="tab-en" class="tab" role="tab" aria-selected="true" aria-pressed="true">English (Wed)</button>
-      <button id="tab-ms" class="tab" role="tab" aria-selected="false" aria-pressed="false">Bahasa Melayu (Jumaat)</button>
-    </div>
+  <!-- language tabs -->
+  <div class="tabs" role="tablist" aria-label="Language">
+    <button id="tab-en" class="tab" role="tab" aria-selected="true" aria-pressed="true">English (20-8-2025)</button>
+    <button id="tab-ms" class="tab" role="tab" aria-selected="false" aria-pressed="false">Bahasa (22-8-2025)</button>
+    <button id="tab-zh" class="tab" role="tab" aria-selected="false" aria-pressed="false">中文 (25-8-2025)</button>
+  </div>
 
+  <!-- date chips (one per language in this mini build) -->
+  <div class="dates" id="dateChips"></div>
+
+  <!-- language-specific instructions -->
+  <div id="howto" class="info"></div>
+
+  <div class="bar">
     <span class="tag">Item <b id="idx">1</b>/<b id="total">1</b></span>
     <span class="tag">Score: <b id="score">0</b> <span id="stars" class="star">⭐️0</span></span>
-
     <div class="barR">
       <label class="tag" style="cursor:pointer">
         <input type="checkbox" id="shuffle" style="vertical-align:-2px;margin-right:6px">Shuffle
@@ -82,22 +90,18 @@
     </div>
   </div>
 
-  <!-- date list -->
-  <div class="dates-wrap" aria-label="Pick a date">
-    <span class="tag">📅 Pick a date:</span>
-    <div id="dateList" class="dates" role="listbox" aria-label="Dates"></div>
-  </div>
-
-  <!-- main board -->
-  <div class="board" style="margin-top:12px">
+  <!-- board -->
+  <div class="board">
     <div class="card clue" id="clueBox" aria-hidden="true"></div>
 
     <div class="card pane">
       <h1 id="title">Type the word</h1>
       <input id="answer" type="text" spellcheck="false" placeholder="Type your answer here…" />
+      <div id="builder" class="builder" hidden></div>
       <div class="row">
         <button id="checkBtn" class="btn">✅ Check</button>
         <button id="clearBtn" class="btn">🧽 Clear</button>
+        <button id="resetPieces" class="btn" hidden>🔁 Reset tiles</button>
       </div>
       <div id="msg" class="msg" aria-live="polite"></div>
       <div class="foot">Tip: Press <b>Enter</b> to check. Sentences don’t need exact capitals or punctuation.</div>
@@ -108,255 +112,220 @@
 <canvas class="confetti" id="fx"></canvas>
 
 <script>
-/* ===== DATA (ALL DATES) ===== */
+/* ---------------- DATA (only these 3 lessons) ---------------- */
 const S = t => ({text:t, sentence:true});
 const W = t => ({text:t});
 
-/* Bahasa Melayu — Friday */
-const BM = {
- "15-8-2025":[W("rumah"),W("reban"),W("raket"),W("roket"),W("robot"),S("Rumah ini besar.")],
- "22-8-2025":[W("surat"),W("semut"),W("sayur"),W("sijil"),W("sikat"),S("Semut gigit kaki saya.")],
- "29-8-2025":[W("tidur"),W("tolak"),W("tebal"),W("tutup"),W("tasik"),S("Buku kamus ini tebal.")],
- "12-9-2025":[W("baldi"),W("derma"),W("lampu"),W("pintu"),W("cikgu"),W("bendi"),S("Ini cikgu saya."),S("Nenek beli bendi.")],
- "26-9-2025":[W("cermin"),W("kompas"),W("rumput"),W("pondok"),W("tanduk"),W("rambut"),S("Kakak beli cincin baru."),S("Rambut adik panjang.")],
- "3-10-2025":[W("pisang"),W("bangku"),W("payung"),W("jagung"),W("mangkuk"),W("tongkat"),W("nangka"),S("Saya suka makan jagung."),S("Kakak ada payung baru.")],
- "10-10-2025":[W("tupai"),W("cakoi"),W("limau"),W("gerai"),W("pantai"),W("kedai"),S("Emak pergi ke kedai."),S("Su Lin beli petai.")],
- "17-10-2025":[W("nyanyi"),W("khemah"),W("bunga"),W("tangan"),W("Khamis"),W("penyu"),W("singa"),W("tanya"),S("Hari ini hari Khamis."),S("Bunga mawar itu cantik.")],
- "31-10-2025":[W("sekolah"),W("basikal"),W("bendera"),W("harimau"),W("jambatan"),W("kemeja"),W("sembilan"),W("tomato"),W("cendawan")],
- "7-11-2025":[W("atas"),W("depan"),W("bawah"),W("tepi"),W("belakang"),W("dalam"),S("Di atas meja ada buku."),S("Di dalam bakul ada bunga.")],
- "14-11-2025":[W("cuci"),W("baca"),W("beli"),W("tulis"),W("lompat"),W("tidur"),W("duduk"),W("lari"),W("nyanyi"),W("makan")],
- "21-11-2025":[W("berenang"),W("melukis"),W("menyiram"),W("menyapu"),W("menyusun"),W("menulis"),W("membaca"),W("menari")]
+/* EN 20-8-2025 */
+const EN = {
+  "20-8-2025": [
+    W("baby"), W("key"), W("money"), W("sunny"), W("honey"),
+    S("The baby likes honey."), S("Where is the key?")
+  ]
 };
-
-/* English — Wednesday */
-const ENG = {
- "13-8-2025":[W("day"),W("way"),W("tray"),W("they"),W("obey"),S("What day is today?"),S("Where did they go?")],
- "20-8-2025":[W("baby"),W("key"),W("money"),W("sunny"),W("honey"),S("The baby likes honey."),S("Where is the key?")],
- "27-8-2025":[W("sky"),W("find"),W("mind"),W("cry"),W("blind"),S("The sky is blue."),S("The old man is blind.")],
- "3-9-2025":[W("tonight"),W("thigh"),W("bright"),W("high"),W("light"),S("The light is bright.")],
- "10-9-2025":[W("throw"),W("snow"),W("crow"),W("window"),W("arrow"),S("Please throw the ball."),S("The arrow is sharp.")],
- "24-9-2025":[W("glue"),W("fruit"),W("fuel"),W("suit"),W("juice"),S("I like fruit juice."),S("I need some glue.")],
- "1-10-2025":[W("screw"),W("crew"),W("few"),W("new"),W("chew"),S("You must chew your food."),S("The car is new.")],
- "8-10-2025":[W("germ"),W("bird"),W("paper"),W("skirt"),W("water"),W("stir"),S("The bird is drinking water."),S("I have a red skirt.")],
- "15-10-2025":[W("nurse"),W("purse"),W("surf"),W("curl"),W("fur"),W("burn"),S("The dog has white fur."),S("The money is in the purse.")],
- "29-10-2025":[W("draw"),W("paw"),W("crawl"),W("yawn"),W("prawn"),W("straw"),S("I can draw well."),S("The straw is in the cup.")],
- "5-11-2025":[W("fork"),W("torch"),W("sword"),W("corn"),W("horn"),W("forty"),S("There are forty forks."),S("The corn is tasty.")],
- "12-11-2025":[W("tall"),W("talk"),W("wall"),W("fall"),W("walk"),W("chalk"),W("call"),W("stalk"),S("I can fall from the tall wall.")]
+/* BM 22-8-2025 */
+const MS = {
+  "22-8-2025": [
+    W("surat"), W("semut"), W("sayur"), W("sijil"), W("sikat"),
+    S("Semut gigit kaki saya.")
+  ]
 };
+/* ZH 25-8-2025 (Simplified) */
+const ZH = { "25-8-2025": [ W("认"), W("进"), W("读"), W("球"), W("温") ] };
+/* Pinyin hints for zh */
+const PINYIN = { "认":"rèn", "进":"jìn", "读":"dú", "球":"qiú", "温":"wēn" };
 
-/* ===== UI refs ===== */
-const dateList = document.getElementById('dateList');
-const clueBox  = document.getElementById('clueBox');
-const titleEl  = document.getElementById('title');
-const ans      = document.getElementById('answer');
-const msg      = document.getElementById('msg');
-const idxEl    = document.getElementById('idx');
-const totalEl  = document.getElementById('total');
-const scoreEl  = document.getElementById('score');
-const starsEl  = document.getElementById('stars');
-const bar      = document.getElementById('bar');
+/* -------------- UI refs -------------- */
+const tabEn=document.getElementById('tab-en'), tabMs=document.getElementById('tab-ms'), tabZh=document.getElementById('tab-zh');
+const dateChips=document.getElementById('dateChips');
+const howto=document.getElementById('howto');
 
-const prevBtn  = document.getElementById('prevBtn');
-const nextBtn  = document.getElementById('nextBtn');
-const checkBtn = document.getElementById('checkBtn');
-const clearBtn = document.getElementById('clearBtn');
-const sayBtn   = document.getElementById('sayBtn');
-const hintBtn  = document.getElementById('hintBtn');
-const revealBtn= document.getElementById('revealBtn');
+const clueBox=document.getElementById('clueBox');
+const titleEl=document.getElementById('title');
+const ans=document.getElementById('answer');
+const builder=document.getElementById('builder');
+const resetPieces=document.getElementById('resetPieces');
+const msg=document.getElementById('msg');
+const idxEl=document.getElementById('idx'); const totalEl=document.getElementById('total');
+const scoreEl=document.getElementById('score'); const starsEl=document.getElementById('stars'); const bar=document.getElementById('bar');
+
+const prevBtn=document.getElementById('prevBtn'), nextBtn=document.getElementById('nextBtn');
+const checkBtn=document.getElementById('checkBtn'), clearBtn=document.getElementById('clearBtn');
+const sayBtn=document.getElementById('sayBtn'), hintBtn=document.getElementById('hintBtn'), revealBtn=document.getElementById('revealBtn');
 const shuffleBox=document.getElementById('shuffle');
 
-const tabEn = document.getElementById('tab-en');
-const tabMs = document.getElementById('tab-ms');
+/* -------------- State -------------- */
+let SETS = EN, voice="en-US";  // default English
+let currentDate=null, list=[], i=0, score=0, stars=0;
 
-/* ===== State ===== */
-let LESSONS = ENG;
-let voice   = "en-US";
-let currentDate = null;
-let list = [], i = 0, score = 0, stars = 0;
-
-/* ===== Language switching (tab buttons) ===== */
-function setLang(lang){
-  if(lang === 'en'){ LESSONS = ENG; voice = 'en-US';
-    tabEn.setAttribute('aria-pressed','true'); tabEn.setAttribute('aria-selected','true');
-    tabMs.setAttribute('aria-pressed','false'); tabMs.setAttribute('aria-selected','false');
-  } else { LESSONS = BM; voice = 'ms-MY';
-    tabMs.setAttribute('aria-pressed','true'); tabMs.setAttribute('aria-selected','true');
-    tabEn.setAttribute('aria-pressed','false'); tabEn.setAttribute('aria-selected','false');
+/* -------------- Instructions text -------------- */
+function setHowTo(lang){
+  if(lang==='en'){
+    howto.innerHTML =
+      "<b>English:</b> Look at the clue, then <b>type the word</b> or <b>full sentence</b>. " +
+      "Use <b>Say</b> to hear it, <b>Hint</b> to get the first/last word, and <b>Reveal</b> if stuck.";
+  }else if(lang==='ms'){
+    howto.innerHTML =
+      "<b>Bahasa Melayu:</b> Tengok petunjuk, kemudian <b>taip perkataan</b> atau <b>ayat penuh</b>. " +
+      "Guna <b>Say</b> untuk sebutan, <b>Hint</b> untuk klu, dan <b>Reveal</b> jika tersekat.";
+  }else{
+    howto.innerHTML =
+      "<b>中文（普通话）练习：</b> 点击 <b>Say</b> 听读音 → " +
+      "如果是 <b>词语</b>（两个或以上汉字），请<b>点选下面的字卡</b>来拼成词语；" +
+      "如果是 <b>单字</b>，可<b>直接输入</b>（或点 <b>Reveal</b> 看答案）。" +
+      "按 <b>Hint</b> 显示<b>拼音</b>。按 <b>Reset tiles</b> 重新排列字卡。";
   }
-  buildDateList();
-  // auto-pick first date
-  const first = Object.keys(LESSONS)[0];
-  selectDate(first);
 }
-tabEn.onclick = () => setLang('en');
-tabMs.onclick = () => setLang('ms');
 
-/* ===== Date list ===== */
-function buildDateList(){
-  dateList.innerHTML = "";
-  Object.keys(LESSONS).forEach((d,idx)=>{
-    const b = document.createElement('button');
-    b.className = 'chip';
-    b.textContent = d;
-    b.setAttribute('role','option');
-    b.setAttribute('data-date', d);
-    b.onclick = () => selectDate(d);
-    dateList.appendChild(b);
+/* -------------- Tabs -------------- */
+function setLang(lang){
+  if(lang==='en'){ SETS=EN; voice="en-US";
+    tabEn.setAttribute('aria-pressed','true'); tabMs.setAttribute('aria-pressed','false'); tabZh.setAttribute('aria-pressed','false');
+  }else if(lang==='ms'){ SETS=MS; voice="ms-MY";
+    tabEn.setAttribute('aria-pressed','false'); tabMs.setAttribute('aria-pressed','true'); tabZh.setAttribute('aria-pressed','false');
+  }else{ SETS=ZH; voice="zh-CN";
+    tabEn.setAttribute('aria-pressed','false'); tabMs.setAttribute('aria-pressed','false'); tabZh.setAttribute('aria-pressed','true');
+  }
+  setHowTo(lang);
+  buildDateChips();
+  const first = Object.keys(SETS)[0];
+  pickDate(first);
+}
+tabEn.onclick=()=>setLang('en');
+tabMs.onclick=()=>setLang('ms');
+tabZh.onclick=()=>setLang('zh');
+
+/* -------------- Dates list (chips) -------------- */
+function buildDateChips(){
+  dateChips.innerHTML="";
+  Object.keys(SETS).forEach(d=>{
+    const b=document.createElement('button');
+    b.className='chip'; b.textContent=d; b.dataset.date=d;
+    b.onclick=()=>pickDate(d);
+    dateChips.appendChild(b);
   });
 }
 function highlightDate(d){
-  [...dateList.querySelectorAll('.chip')].forEach(ch=>{
-    ch.classList.toggle('active', ch.getAttribute('data-date')===d);
-    ch.setAttribute('aria-selected', ch.classList.contains('active') ? 'true' : 'false');
-  });
+  [...dateChips.children].forEach(c=>c.classList.toggle('active',c.dataset.date===d));
 }
-function selectDate(d){
-  currentDate = d;
-  highlightDate(d);
-  list = LESSONS[d].slice();
-  if(shuffleBox.checked) shuffle(list);
-  i = 0; score = 0; stars = 0;
-  scoreEl.textContent = score; starsEl.textContent = '⭐️'+stars;
-  totalEl.textContent = list.length;
-  loadItem();
+function pickDate(d){
+  currentDate=d; highlightDate(d);
+  list=SETS[d].slice(); if(shuffleBox.checked) shuffle(list);
+  i=0; score=0; stars=0; scoreEl.textContent=score; starsEl.textContent='⭐️'+stars;
+  totalEl.textContent=list.length; loadItem();
 }
-shuffleBox.onchange = () => { if(currentDate) selectDate(currentDate); };
+shuffleBox.onchange=()=>{ if(currentDate) pickDate(currentDate); };
 
-/* ===== Item flow ===== */
+/* -------------- Item flow -------------- */
 function loadItem(){
-  const it = list[i];
-  idxEl.textContent = i+1;
-  titleEl.textContent = it.sentence ? "Type the whole sentence" : "Spell the word";
-  clueBox.innerHTML = ""; clueBox.appendChild(clueFor(it.text));
-  ans.value = ""; msg.textContent = ""; ans.focus();
+  const it=list[i];
+  idxEl.textContent=i+1;
+  const isZh = (SETS===ZH);
+  titleEl.textContent = it.sentence ? "Type the whole sentence" : (isZh ? "Build the word or type the character" : "Spell the word");
+  clueBox.innerHTML=""; clueBox.appendChild(clueFor(it.text));
+  ans.value=""; msg.textContent=""; ans.focus();
+  setupBuilder(it, isZh);
   updateBar();
 }
 function normalize(s){ return (s||"").toLowerCase().replace(/[.,!?]/g,"").replace(/\s+/g," ").trim(); }
 function check(){
-  const it = list[i];
+  const it=list[i];
   const ok = normalize(ans.value) === normalize(it.text);
   if(ok){
-    msg.innerHTML = `✅ <span class="good">Correct!</span> <b>${it.text}</b>`;
-    score += 10; scoreEl.textContent = score;
-    stars += 1; starsEl.textContent = '⭐️'+stars;
-    confetti(); speak(voice, it.text);
-    setTimeout(()=>{ if(i<list.length-1){ i++; loadItem(); } else { msg.innerHTML += "<br>🎉 Great job! Lesson finished."; } }, 850);
+    msg.innerHTML=`✅ <span class="good">Correct!</span> <b>${it.text}</b>`;
+    score+=10; scoreEl.textContent=score; stars++; starsEl.textContent='⭐️'+stars; confetti(); speak(voice,it.text);
+    setTimeout(()=>{ if(i<list.length-1){ i++; loadItem(); } else { msg.innerHTML+="<br>🎉 Great job! Lesson finished."; } }, 850);
   }else{
-    msg.innerHTML = `❌ <span class="bad">Try again</span> — hint: ${hintFor(it.text)}`;
-    speak(voice, LESSONS===ENG ? "Try again" : "Cuba lagi");
+    msg.innerHTML=`❌ <span class="bad">Try again</span> — hint: ${hintFor(it.text)}`;
+    speak(voice, SETS===EN ? "Try again" : (SETS===MS ? "Cuba lagi" : "再试一次"));
   }
 }
-checkBtn.onclick = check;
-ans.addEventListener('keydown', e=>{ if(e.key==='Enter') check(); });
-clearBtn.onclick = ()=>{ ans.value=""; ans.focus(); msg.textContent=""; };
+checkBtn.onclick=check;
+ans.addEventListener('keydown',e=>{ if(e.key==='Enter') check(); });
+clearBtn.onclick=()=>{ ans.value=""; ans.focus(); msg.textContent=""; if(!builder.hidden) markAllUnused(); };
+prevBtn.onclick=()=>{ if(i>0){ i--; loadItem(); } };
+nextBtn.onclick=()=>{ if(i<list.length-1){ i++; loadItem(); } };
+sayBtn.onclick =()=>{ const it=list[i]; speak(voice,it.text); };
+hintBtn.onclick=()=>{ const it=list[i]; msg.innerHTML="💡 Hint: "+hintFor(it.text); };
+revealBtn.onclick=()=>{ const it=list[i]; msg.innerHTML="👀 The answer is: <b>"+it.text+"</b>"; };
 
-prevBtn.onclick = ()=>{ if(i>0){ i--; loadItem(); } };
-nextBtn.onclick = ()=>{ if(i<list.length-1){ i++; loadItem(); } };
+/* -------------- Sentence / Character builder -------------- */
+function wordsFromSentence(t){ return t.replace(/[.?!]/g,"").split(/\s+/); }
+function setupBuilder(it, isZh){
+  // show tiles for sentences (EN/BM) and for Mandarin words with length>1
+  let pieces = [];
+  if(it.sentence){
+    pieces = shuffle(wordsFromSentence(it.text));
+  }else if(isZh && it.text.length > 1){
+    pieces = shuffle(it.text.split(""));        // 汉字拆分为字卡
+  }else{
+    builder.hidden=true; resetPieces.hidden=true; return;
+  }
+  builder.hidden=false; resetPieces.hidden=false;
+  builder.innerHTML="";
+  pieces.forEach(word=>{
+    const p=document.createElement('button');
+    p.className='piece'; p.textContent=word;
+    p.onclick=()=>{ if(p.classList.contains('used')) return; p.classList.add('used');
+      ans.value=(ans.value.trim()+" "+word).trim()+" "; ans.focus(); };
+    builder.appendChild(p);
+  });
+  resetPieces.onclick=()=>{ ans.value=""; markAllUnused(); ans.focus(); };
+}
+function markAllUnused(){ [...builder.querySelectorAll('.piece')].forEach(x=>x.classList.remove('used')); }
 
-sayBtn.onclick   = ()=>{ const it=list[i]; speak(voice, it.text); };
-hintBtn.onclick  = ()=>{ const it=list[i]; msg.innerHTML = "💡 Hint: " + hintFor(it.text); };
-revealBtn.onclick= ()=>{ const it=list[i]; msg.innerHTML = "👀 The answer is: <b>"+it.text+"</b>"; };
-
-/* ===== Hints & clues ===== */
+/* -------------- Hints & clues -------------- */
 function hintFor(text){
-  const t = text.replace(/[.,!?]/g,"");
+  if(SETS===ZH){ const p = PINYIN[text]; return p ? `拼音: <b>${p}</b>` : "中文汉字"; }
+  const t=text.replace(/[.,!?]/g,"");
   if(t.includes(" ")){ const w=t.split(/\s+/); return `<b>${w[0]}</b> … <b>${w[w.length-1]}</b>`; }
   if(t.length<=2) return t;
   return `${t[0]} ${"_ ".repeat(t.length-2)} ${t[t.length-1]}`;
 }
 function clueFor(text){
-  const t=normalize(text);
+  const t=(text||"").toLowerCase();
   const d=document.createElement('div'); d.className="big";
   const add=(e,cls="")=>{ const el=document.createElement('div'); el.textContent=e; el.className="big "+cls; d.appendChild(el); };
-  const has=k=>t.includes(k);
+
+  if(SETS===ZH){         /* simple icons for 汉字 */
+    if(text==="球") add("⚽");
+    else if(text==="读") add("📖");
+    else if(text==="进") add("➡️");
+    else if(text==="温") add("🌡️");
+    else if(text==="认") add("🧠");
+    return d;
+  }
 
   // English/Malay keywords → emoji
-  if(has("baby")) add("👶","pulse");
-  if(has("honey")||has("madu")) add("🍯");
-  if(has("key")||has("kunci")) add("🔑","wiggle");
-  if(has("sunny")||has("sun")||has("matahari")) add("☀️","sun");
-  if(has("sky")||has("langit")) add("🌤️","sun");
-  if(has("glue")||has("gam")) add("🧪");
-  if(has("straw")) add("🥤");
-  if(has("bird")||has("burung")) add("🐦");
-  if(has("ant")||has("semut")) add("🐜","wiggle");
-  if(has("leg")||has("kaki")) add("🦵");
-  if(has("fruit")||has("buah")) add("🍎");
-  if(has("corn")||has("jagung")) add("🌽");
-  if(has("car")||has("kereta")) add("🚗");
-  if(has("fork")) add("🍴");
-  if(has("nurse")) add("👩‍⚕️");
-  if(has("purse")||has("dompet")) add("👛");
-  if(has("money")||has("duit")) add("💵","pulse");
-  if(has("draw")||has("lukis")) add("✏️");
-  if(has("window")||has("tingkap")||has("pintu")||has("door")) add("🪟");
-  if(has("arrow")||has("anak panah")) add("🏹");
-  if(has("snow")) add("❄️");
-  if(has("throw")||has("lempar")) add("🏐");
-  if(has("walk")||has("lari")) add("🚶");
-  if(has("tall")||has("tinggi")||has("wall")||has("dinding")) add("🧱");
-  if(has("school")||has("sekolah")) add("🏫");
-  if(has("rumah")||has("house")) add("🏠");
-  if(has("robot")) add("🤖");
-  if(has("rocket")||has("roket")) add("🚀");
-  if(has("raket")) add("🎾");
-  if(has("reban")||has("ayam")) add("🐔");
-  if(has("lampu")||has("light")) add("💡");
-  if(has("payung")) add("☂️");
-  if(has("pisang")||has("banana")) add("🍌");
-  if(has("nangka")) add("🥭");
-  if(has("mangkuk")) add("🥣");
-  if(has("tongkat")) add("🦯");
-  if(has("pantai")) add("🏖️");
-  if(has("kedai")||has("shop")) add("🏪");
-  if(has("limau")||has("lemon")) add("🍋");
-  if(has("khemah")||has("kemah")) add("⛺");
-  if(has("bendera")) add("🚩");
-  if(has("basikal")) add("🚲");
-  if(has("harimau")||has("tiger")) add("🐯");
-  if(has("jambatan")) add("🌉");
-  if(has("kemeja")) add("👔");
-  if(has("tomato")) add("🍅");
-  if(has("cendawan")) add("🍄");
-  if(has("buku")||has("book")) add("📘");
-  if(has("bakul")||has("basket")) add("🧺");
-  if(has("cuci")) add("🧼");
-  if(has("baca")||has("read")) add("📖");
-  if(has("tulis")||has("write")) add("✍️");
-  if(has("tidur")||has("sleep")) add("😴");
-  if(has("duduk")) add("🪑");
-  if(has("nyanyi")||has("sing")) add("🎤");
-  if(has("makan")||has("eat")) add("🍽️");
-  if(has("berenang")) add("🏊");
-  if(has("menyiram")) add("💦");
-  if(has("menyapu")) add("🧹");
-  if(has("menari")) add("💃");
+  if(t.includes("baby")) add("👶","pulse");
+  if(t.includes("honey")||t.includes("madu")) add("🍯");
+  if(t.includes("key")||t.includes("kunci")) add("🔑","wiggle");
+  if(t.includes("sunny")||t.includes("sun")||t.includes("matahari")) add("☀️","sun");
+  if(t.includes("semut")||t.includes("ant")) add("🐜","wiggle");
+  if(t.includes("kaki")||t.includes("leg")) add("🦵");
+  if(t.includes("surat")) add("✉️");
+  if(t.includes("sayur")) add("🥦");
+  if(t.includes("sijil")) add("📜");
+  if(t.includes("sikat")) add("💇‍♀️");
+  if(t.includes("likes")) add("❤️","pulse");
+  if(t.includes("where")||t.includes("mana")) add("❓");
 
-  if(!d.childNodes.length){ const el=document.createElement('div'); el.className="big"; el.textContent=text[0].toUpperCase(); d.appendChild(el); }
+  if(!d.childNodes.length){ const el=document.createElement('div'); el.textContent=text[0].toUpperCase(); d.appendChild(el); }
   return d;
 }
 
-/* ===== Utils & effects ===== */
-function shuffle(a){ for(let j=a.length-1;j>0;j--){ const k=(Math.random()*(j+1))|0; [a[j],a[k]]=[a[k],a[j]]; } }
+/* -------------- Utils + effects -------------- */
+function shuffle(a){ for(let j=a.length-1;j>0;j--){ const k=(Math.random()*(j+1))|0; [a[j],a[k]]=[a[k],a[j]]; } return a; }
 function updateBar(){ bar.style.width=((i)/Math.max(1,(list.length-1))*100)+"%"; }
-function speak(lang,text){ if(!('speechSynthesis' in window)) return; const u=new SpeechSynthesisUtterance(text); u.lang=lang; u.rate=0.95; u.pitch=1.0; speechSynthesis.cancel(); speechSynthesis.speak(u); }
+function speak(lang,text){ if(!('speechSynthesis' in window)) return; const u=new SpeechSynthesisUtterance(text); u.lang=lang; u.rate=(lang==='zh-CN'?0.85:0.95); u.pitch=1; speechSynthesis.cancel(); speechSynthesis.speak(u); }
 
-/* Confetti shown only while animating (so it never blocks clicks) */
-const fx=document.getElementById('fx'), ctx=fx.getContext('2d'); let W,H;
-function rs(){ W=fx.width=innerWidth; H=fx.height=innerHeight } addEventListener('resize',rs,{passive:true}); rs();
-function confetti(){
-  fx.style.display='block';
-  const n=120,b=[...Array(n)].map(()=>({x:Math.random()*W,y:-10,vx:(Math.random()-0.5)*2,vy:2+Math.random()*4,w:6,h:10,c:`hsl(${180+Math.random()*160} 90% 60%)`,a:Math.random()*Math.PI}));
-  let t=0;(function loop(){
-    ctx.clearRect(0,0,W,H);
-    b.forEach(p=>{p.x+=p.vx;p.y+=p.vy;p.a+=0.1;ctx.save();ctx.translate(p.x,p.y);ctx.rotate(p.a);ctx.fillStyle=p.c;ctx.fillRect(-p.w/2,-p.h/2,p.w,p.h);ctx.restore();});
-    if((t+=16)<900) requestAnimationFrame(loop);
-    else { ctx.clearRect(0,0,W,H); fx.style.display='none'; }
-  })();
-}
+/* confetti (canvas hidden when idle so it never blocks clicks) */
+const fx=document.getElementById('fx'), ctx=fx.getContext('2d'); let W,H; function rs(){W=fx.width=innerWidth;H=fx.height=innerHeight} addEventListener('resize',rs,{passive:true}); rs();
+function confetti(){ fx.style.display='block'; const n=120,b=[...Array(n)].map(()=>({x:Math.random()*W,y:-10,vx:(Math.random()-0.5)*2,vy:2+Math.random()*4,w:6,h:10,c:`hsl(${180+Math.random()*160} 90% 60%)`,a:Math.random()*Math.PI}));
+  let t=0;(function loop(){ctx.clearRect(0,0,W,H);b.forEach(p=>{p.x+=p.vx;p.y+=p.vy;p.a+=0.1;ctx.save();ctx.translate(p.x,p.y);ctx.rotate(p.a);ctx.fillStyle=p.c;ctx.fillRect(-p.w/2,-p.h/2,p.w,p.h);ctx.restore();}); if((t+=16)<900) requestAnimationFrame(loop); else {ctx.clearRect(0,0,W,H); fx.style.display='none';}})(); }
 
-/* ===== init ===== */
-setLang('en');  // default to English; you can change to 'ms' if you prefer
+/* -------------- init -------------- */
+setLang('en'); // default language on load
 </script>
 </body>
 </html>
