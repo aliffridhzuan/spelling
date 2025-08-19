@@ -3,7 +3,8 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>R.E.A.L Kids - Spelling — Mini (EN / BM / 中文)</title>
+<meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval';">
+<title>Spelling — Mini (EN / BM / 中文)</title>
 <style>
   :root{--bg:#0b1020;--panel:#111935;--ink:#e9f3ff;--muted:#a9bad7;--ok:#22c55e;--no:#ef4444;--chip:#151f44;--chip-b:#253060;--accent:#60a5fa}
   html,body{height:100%} body{margin:0;background:var(--bg);color:var(--ink);font:18px/1.5 system-ui,-apple-system,Segoe UI,Roboto,Arial}
@@ -55,6 +56,12 @@
   .builder{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
   .piece{background:#101a3a;border:1px dashed #2a3973;color:#cfe1ff;border-radius:10px;padding:8px 12px;cursor:pointer;transition:opacity 0.2s ease}
   .piece.used{opacity:.35;pointer-events:none}
+
+  /* Mobile touch fixes */
+  .btn, .tab, .chip, .piece {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
 
   .confetti{position:fixed;inset:0;pointer-events:none;z-index:0;display:none}
 </style>
@@ -113,457 +120,474 @@
 <canvas class="confetti" id="fx"></canvas>
 
 <script>
-/* ---------------- DATA (only these 3 lessons) ---------------- */
-const S = t => ({text:t, sentence:true});
-const W = t => ({text:t});
+// Current script version for cache busting
+document.currentScript?.setAttribute('data-version', Date.now());
 
-/* EN 20-8-2025 */
-const EN = {
-  "20-8-2025": [
-    W("baby"), W("key"), W("money"), W("sunny"), W("honey"),
-    S("The baby likes honey."), S("Where is the key?")
-  ]
-};
-/* BM 22-8-2025 */
-const MS = {
-  "22-8-2025": [
-    W("surat"), W("semut"), W("sayur"), W("sijil"), W("sikat"),
-    S("Semut gigit kaki saya.")
-  ]
-};
-/* ZH 25-8-2025 (Simplified) */
-const ZH = { 
-  "25-8-2025": [ 
-    W("认"), W("进"), W("读"), W("球"), W("温"),
-    S("我读很多书。"), S("这个球很漂亮。")
-  ] 
-};
-/* Pinyin hints for zh */
-const PINYIN = { 
-  "认":"rèn", "进":"jìn", "读":"dú", "球":"qiú", "温":"wēn",
-  "我读很多书。":"wǒ dú hěn duō shū",
-  "这个球很漂亮。":"zhè ge qiú hěn piào liang"
-};
+document.addEventListener('DOMContentLoaded', function() {
+  /* ---------------- DATA (only these 3 lessons) ---------------- */
+  const S = t => ({text:t, sentence:true});
+  const W = t => ({text:t});
 
-/* -------------- UI refs -------------- */
-const tabEn=document.getElementById('tab-en'), tabMs=document.getElementById('tab-ms'), tabZh=document.getElementById('tab-zh');
-const dateChips=document.getElementById('dateChips');
-const howto=document.getElementById('howto');
-
-const clueBox=document.getElementById('clueBox');
-const titleEl=document.getElementById('title');
-const ans=document.getElementById('answer');
-const builder=document.getElementById('builder');
-const resetPieces=document.getElementById('resetPieces');
-const msg=document.getElementById('msg');
-const idxEl=document.getElementById('idx'); const totalEl=document.getElementById('total');
-const scoreEl=document.getElementById('score'); const starsEl=document.getElementById('stars'); const bar=document.getElementById('bar');
-
-const prevBtn=document.getElementById('prevBtn'), nextBtn=document.getElementById('nextBtn');
-const checkBtn=document.getElementById('checkBtn'), clearBtn=document.getElementById('clearBtn');
-const sayBtn=document.getElementById('sayBtn'), hintBtn=document.getElementById('hintBtn'), revealBtn=document.getElementById('revealBtn');
-const shuffleBox=document.getElementById('shuffle');
-
-/* -------------- State -------------- */
-let SETS = EN, voice="en-US";  // default English
-let currentDate=null, list=[], i=0, score=0, stars=0;
-let speechSynthesisSupported = 'speechSynthesis' in window;
-
-/* -------------- Instructions text -------------- */
-function setHowTo(lang){
-  if(lang==='en'){
-    howto.innerHTML =
-      "<b>English:</b> Look at the clue, then <b>type the word</b> or <b>full sentence</b>. " +
-      "Use <b>Say</b> to hear it, <b>Hint</b> to get the first/last word, and <b>Reveal</b> if stuck.";
-  }else if(lang==='ms'){
-    howto.innerHTML =
-      "<b>Bahasa Melayu:</b> Tengok petunjuk, kemudian <b>taip perkataan</b> atau <b>ayat penuh</b>. " +
-      "Guna <b>Say</b> untuk sebutan, <b>Hint</b> untuk klu, dan <b>Reveal</b> jika tersekat.";
-  }else{
-    howto.innerHTML =
-      "<b>中文（普通话）练习：</b> 点击 <b>Say</b> 听读音 → " +
-      "如果是 <b>词语</b>（两个或以上汉字），请<b>点选下面的字卡</b>来拼成词语；" +
-      "如果是 <b>单字</b>，可<b>直接输入</b>（或点 <b>Reveal</b> 看答案）。" +
-      "按 <b>Hint</b> 显示<b>拼音</b>。按 <b>Reset tiles</b> 重新排列字卡。";
-  }
-}
-
-/* -------------- Tabs -------------- */
-function setLang(lang){
-  if(lang==='en'){ 
-    SETS=EN; 
-    voice="en-US";
-    tabEn.setAttribute('aria-pressed','true'); 
-    tabMs.setAttribute('aria-pressed','false'); 
-    tabZh.setAttribute('aria-pressed','false');
-  }else if(lang==='ms'){ 
-    SETS=MS; 
-    voice="ms-MY";
-    tabEn.setAttribute('aria-pressed','false'); 
-    tabMs.setAttribute('aria-pressed','true'); 
-    tabZh.setAttribute('aria-pressed','false');
-  }else{ 
-    SETS=ZH; 
-    voice="zh-CN";
-    tabEn.setAttribute('aria-pressed','false'); 
-    tabMs.setAttribute('aria-pressed','false'); 
-    tabZh.setAttribute('aria-pressed','true');
-  }
-  setHowTo(lang);
-  buildDateChips();
-  const first = Object.keys(SETS)[0];
-  pickDate(first);
-}
-
-tabEn.addEventListener('click', () => setLang('en'));
-tabMs.addEventListener('click', () => setLang('ms'));
-tabZh.addEventListener('click', () => setLang('zh'));
-
-/* -------------- Dates list (chips) -------------- */
-function buildDateChips(){
-  dateChips.innerHTML="";
-  Object.keys(SETS).forEach(d => {
-    const b=document.createElement('button');
-    b.className='chip'; 
-    b.textContent=d; 
-    b.dataset.date=d;
-    b.addEventListener('click', () => pickDate(d));
-    dateChips.appendChild(b);
-  });
-}
-
-function highlightDate(d){
-  [...dateChips.children].forEach(c => c.classList.toggle('active', c.dataset.date === d));
-}
-
-function pickDate(d){
-  currentDate=d; 
-  highlightDate(d);
-  list=SETS[d].slice(); 
-  if(shuffleBox.checked) shuffle(list);
-  i=0; 
-  score=0; 
-  stars=0; 
-  scoreEl.textContent=score; 
-  starsEl.textContent='⭐️'+stars;
-  totalEl.textContent=list.length; 
-  loadItem();
-}
-
-shuffleBox.addEventListener('change', () => { 
-  if(currentDate) pickDate(currentDate); 
-});
-
-/* -------------- Item flow -------------- */
-function loadItem(){
-  const it = list[i];
-  idxEl.textContent = i+1;
-  const isZh = (SETS===ZH);
-  
-  // Update title based on content type
-  if(it.sentence) {
-    titleEl.textContent = isZh ? "Type the whole sentence" : "Type the sentence";
-  } else {
-    titleEl.textContent = isZh ? (it.text.length > 1 ? "Build the word" : "Type the character") : "Spell the word";
-  }
-  
-  clueBox.innerHTML=""; 
-  clueBox.appendChild(clueFor(it.text));
-  ans.value=""; 
-  msg.textContent=""; 
-  ans.focus();
-  
-  // Update button states
-  prevBtn.disabled = i === 0;
-  nextBtn.disabled = i === list.length - 1;
-  
-  setupBuilder(it, isZh);
-  updateBar();
-}
-
-function normalize(s){ 
-  return (s||"").toLowerCase().replace(/[.,!?]/g,"").replace(/\s+/g," ").trim(); 
-}
-
-function check(){
-  const it = list[i];
-  const userAnswer = normalize(ans.value);
-  const correctAnswer = normalize(it.text);
-  const isCorrect = userAnswer === correctAnswer;
-  
-  if(isCorrect){
-    msg.innerHTML=`✅ <span class="good">Correct!</span> <b>${it.text}</b>`;
-    score += 10; 
-    scoreEl.textContent = score; 
-    stars++; 
-    starsEl.textContent = '⭐️' + stars; 
-    confetti(); 
-    
-    if(speechSynthesisSupported) {
-      speak(voice, it.text);
-    }
-    
-    setTimeout(() => { 
-      if(i < list.length - 1){ 
-        i++; 
-        loadItem(); 
-      } else { 
-        msg.innerHTML += "<br>🎉 Great job! Lesson finished."; 
-      } 
-    }, 850);
-  } else {
-    msg.innerHTML=`❌ <span class="bad">Try again</span> — hint: ${hintFor(it.text)}`;
-    
-    if(speechSynthesisSupported) {
-      const tryAgainMsg = SETS===EN ? "Try again" : (SETS===MS ? "Cuba lagi" : "再试一次");
-      speak(voice, tryAgainMsg);
-    }
-  }
-}
-
-checkBtn.addEventListener('click', check);
-ans.addEventListener('keydown', e => { 
-  if(e.key === 'Enter') check(); 
-});
-
-clearBtn.addEventListener('click', () => { 
-  ans.value = ""; 
-  ans.focus(); 
-  msg.textContent = ""; 
-  if(!builder.hidden) markAllUnused(); 
-});
-
-prevBtn.addEventListener('click', () => { 
-  if(i > 0){ 
-    i--; 
-    loadItem(); 
-  } 
-});
-
-nextBtn.addEventListener('click', () => { 
-  if(i < list.length - 1){ 
-    i++; 
-    loadItem(); 
-  } 
-});
-
-sayBtn.addEventListener('click', () => { 
-  const it = list[i]; 
-  if(speechSynthesisSupported) {
-    speak(voice, it.text);
-  } else {
-    msg.textContent = "Speech synthesis not supported in your browser";
-  }
-});
-
-hintBtn.addEventListener('click', () => { 
-  const it = list[i]; 
-  msg.innerHTML = "💡 Hint: " + hintFor(it.text); 
-});
-
-revealBtn.addEventListener('click', () => { 
-  const it = list[i]; 
-  msg.innerHTML = "👀 The answer is: <b>" + it.text + "</b>"; 
-});
-
-/* -------------- Sentence / Character builder -------------- */
-function wordsFromSentence(t){ 
-  return t.replace(/[.?!]/g,"").split(/\s+/); 
-}
-
-function setupBuilder(it, isZh){
-  let pieces = [];
-  
-  if(it.sentence){
-    // For sentences in any language
-    pieces = shuffle(wordsFromSentence(it.text));
-  } else if(isZh && it.text.length > 1){
-    // For Chinese words with multiple characters
-    pieces = shuffle(it.text.split(""));
-  } else {
-    // Hide builder for single words/characters
-    builder.hidden = true; 
-    resetPieces.hidden = true; 
-    return;
-  }
-  
-  builder.hidden = false; 
-  resetPieces.hidden = false;
-  builder.innerHTML = "";
-  
-  pieces.forEach(word => {
-    const p = document.createElement('button');
-    p.className = 'piece'; 
-    p.textContent = word;
-    p.addEventListener('click', () => {
-      if(p.classList.contains('used')) return; 
-      p.classList.add('used');
-      ans.value = (ans.value.trim() + " " + word).trim() + (it.sentence ? " " : ""); 
-      ans.focus(); 
-    });
-    builder.appendChild(p);
-  });
-  
-  resetPieces.addEventListener('click', () => { 
-    ans.value = ""; 
-    markAllUnused(); 
-    ans.focus(); 
-  });
-}
-
-function markAllUnused(){ 
-  [...builder.querySelectorAll('.piece')].forEach(x => x.classList.remove('used')); 
-}
-
-/* -------------- Hints & clues -------------- */
-function hintFor(text){
-  if(SETS === ZH){ 
-    const p = PINYIN[text]; 
-    return p ? `拼音: <b>${p}</b>` : "中文汉字"; 
-  }
-  
-  const t = text.replace(/[.,!?]/g,"");
-  
-  if(t.includes(" ")){ 
-    const w = t.split(/\s+/); 
-    return `<b>${w[0]}</b> … <b>${w[w.length-1]}</b>`; 
-  }
-  
-  if(t.length <= 2) return t;
-  
-  return `${t[0]} ${"_ ".repeat(t.length-2)} ${t[t.length-1]}`;
-}
-
-function clueFor(text){
-  const t = (text || "").toLowerCase();
-  const d = document.createElement('div'); 
-  d.className = "big";
-  
-  const add = (e, cls = "") => { 
-    const el = document.createElement('div'); 
-    el.textContent = e; 
-    el.className = "big " + cls; 
-    d.appendChild(el); 
+  /* EN 20-8-2025 */
+  const EN = {
+    "20-8-2025": [
+      W("baby"), W("key"), W("money"), W("sunny"), W("honey"),
+      S("The baby likes honey."), S("Where is the key?")
+    ]
+  };
+  /* BM 22-8-2025 */
+  const MS = {
+    "22-8-2025": [
+      W("surat"), W("semut"), W("sayur"), W("sijil"), W("sikat"),
+      S("Semut gigit kaki saya.")
+    ]
+  };
+  /* ZH 25-8-2025 (Simplified) */
+  const ZH = { 
+    "25-8-2025": [ 
+      W("认"), W("进"), W("读"), W("球"), W("温"),
+      S("我读很多书。"), S("这个球很漂亮。")
+    ] 
+  };
+  /* Pinyin hints for zh */
+  const PINYIN = { 
+    "认":"rèn", "进":"jìn", "读":"dú", "球":"qiú", "温":"wēn",
+    "我读很多书。":"wǒ dú hěn duō shū",
+    "这个球很漂亮。":"zhè ge qiú hěn piào liang"
   };
 
-  if(SETS === ZH){         /* simple icons for 汉字 */
-    if(text === "球") add("⚽");
-    else if(text === "读") add("📖");
-    else if(text === "进") add("➡️");
-    else if(text === "温") add("🌡️");
-    else if(text === "认") add("🧠");
-    else if(text.includes("书")) add("📚");
-    else if(text.includes("漂亮")) add("✨");
+  /* -------------- UI refs -------------- */
+  const tabEn=document.getElementById('tab-en'), tabMs=document.getElementById('tab-ms'), tabZh=document.getElementById('tab-zh');
+  const dateChips=document.getElementById('dateChips');
+  const howto=document.getElementById('howto');
+
+  const clueBox=document.getElementById('clueBox');
+  const titleEl=document.getElementById('title');
+  const ans=document.getElementById('answer');
+  const builder=document.getElementById('builder');
+  const resetPieces=document.getElementById('resetPieces');
+  const msg=document.getElementById('msg');
+  const idxEl=document.getElementById('idx'); const totalEl=document.getElementById('total');
+  const scoreEl=document.getElementById('score'); const starsEl=document.getElementById('stars'); const bar=document.getElementById('bar');
+
+  const prevBtn=document.getElementById('prevBtn'), nextBtn=document.getElementById('nextBtn');
+  const checkBtn=document.getElementById('checkBtn'), clearBtn=document.getElementById('clearBtn');
+  const sayBtn=document.getElementById('sayBtn'), hintBtn=document.getElementById('hintBtn'), revealBtn=document.getElementById('revealBtn');
+  const shuffleBox=document.getElementById('shuffle');
+
+  /* -------------- State -------------- */
+  let SETS = EN, voice="en-US";  // default English
+  let currentDate=null, list=[], i=0, score=0, stars=0;
+  let speechSynthesisSupported = 'speechSynthesis' in window;
+
+  /* -------------- Instructions text -------------- */
+  function setHowTo(lang){
+    if(lang==='en'){
+      howto.innerHTML =
+        "<b>English:</b> Look at the clue, then <b>type the word</b> or <b>full sentence</b>. " +
+        "Use <b>Say</b> to hear it, <b>Hint</b> to get the first/last word, and <b>Reveal</b> if stuck.";
+    }else if(lang==='ms'){
+      howto.innerHTML =
+        "<b>Bahasa Melayu:</b> Tengok petunjuk, kemudian <b>taip perkataan</b> atau <b>ayat penuh</b>. " +
+        "Guna <b>Say</b> untuk sebutan, <b>Hint</b> untuk klu, dan <b>Reveal</b> jika tersekat.";
+    }else{
+      howto.innerHTML =
+        "<b>中文（普通话）练习：</b> 点击 <b>Say</b> 听读音 → " +
+        "如果是 <b>词语</b>（两个或以上汉字），请<b>点选下面的字卡</b>来拼成词语；" +
+        "如果是 <b>单字</b>，可<b>直接输入</b>（或点 <b>Reveal</b> 看答案）。" +
+        "按 <b>Hint</b> 显示<b>拼音</b>。按 <b>Reset tiles</b> 重新排列字卡。";
+    }
+  }
+
+  /* -------------- Tabs -------------- */
+  function setLang(lang){
+    if(lang==='en'){ 
+      SETS=EN; 
+      voice="en-US";
+      tabEn.setAttribute('aria-pressed','true'); 
+      tabMs.setAttribute('aria-pressed','false'); 
+      tabZh.setAttribute('aria-pressed','false');
+    }else if(lang==='ms'){ 
+      SETS=MS; 
+      voice="ms-MY";
+      tabEn.setAttribute('aria-pressed','false'); 
+      tabMs.setAttribute('aria-pressed','true'); 
+      tabZh.setAttribute('aria-pressed','false');
+    }else{ 
+      SETS=ZH; 
+      voice="zh-CN";
+      tabEn.setAttribute('aria-pressed','false'); 
+      tabMs.setAttribute('aria-pressed','false'); 
+      tabZh.setAttribute('aria-pressed','true');
+    }
+    setHowTo(lang);
+    buildDateChips();
+    const first = Object.keys(SETS)[0];
+    pickDate(first);
+  }
+
+  tabEn.addEventListener('click', () => setLang('en'));
+  tabMs.addEventListener('click', () => setLang('ms'));
+  tabZh.addEventListener('click', () => setLang('zh'));
+
+  /* -------------- Dates list (chips) -------------- */
+  function buildDateChips(){
+    dateChips.innerHTML="";
+    Object.keys(SETS).forEach(d => {
+      const b=document.createElement('button');
+      b.className='chip'; 
+      b.textContent=d; 
+      b.dataset.date=d;
+      b.addEventListener('click', () => pickDate(d));
+      dateChips.appendChild(b);
+    });
+  }
+
+  function highlightDate(d){
+    [...dateChips.children].forEach(c => c.classList.toggle('active', c.dataset.date === d));
+  }
+
+  function pickDate(d){
+    currentDate=d; 
+    highlightDate(d);
+    list=SETS[d].slice(); 
+    if(shuffleBox.checked) shuffle(list);
+    i=0; 
+    score=0; 
+    stars=0; 
+    scoreEl.textContent=score; 
+    starsEl.textContent='⭐️'+stars;
+    totalEl.textContent=list.length; 
+    loadItem();
+  }
+
+  shuffleBox.addEventListener('change', () => { 
+    if(currentDate) pickDate(currentDate); 
+  });
+
+  /* -------------- Item flow -------------- */
+  function loadItem(){
+    const it = list[i];
+    idxEl.textContent = i+1;
+    const isZh = (SETS===ZH);
+    
+    // Update title based on content type
+    if(it.sentence) {
+      titleEl.textContent = isZh ? "Type the whole sentence" : "Type the sentence";
+    } else {
+      titleEl.textContent = isZh ? (it.text.length > 1 ? "Build the word" : "Type the character") : "Spell the word";
+    }
+    
+    clueBox.innerHTML=""; 
+    clueBox.appendChild(clueFor(it.text));
+    ans.value=""; 
+    msg.textContent=""; 
+    ans.focus();
+    
+    // Update button states
+    prevBtn.disabled = i === 0;
+    nextBtn.disabled = i === list.length - 1;
+    
+    setupBuilder(it, isZh);
+    updateBar();
+  }
+
+  function normalize(s){ 
+    return (s||"").toLowerCase().replace(/[.,!?]/g,"").replace(/\s+/g," ").trim(); 
+  }
+
+  function check(){
+    const it = list[i];
+    const userAnswer = normalize(ans.value);
+    const correctAnswer = normalize(it.text);
+    const isCorrect = userAnswer === correctAnswer;
+    
+    if(isCorrect){
+      msg.innerHTML=`✅ <span class="good">Correct!</span> <b>${it.text}</b>`;
+      score += 10; 
+      scoreEl.textContent = score; 
+      stars++; 
+      starsEl.textContent = '⭐️' + stars; 
+      confetti(); 
+      
+      if(speechSynthesisSupported) {
+        speak(voice, it.text);
+      }
+      
+      setTimeout(() => { 
+        if(i < list.length - 1){ 
+          i++; 
+          loadItem(); 
+        } else { 
+          msg.innerHTML += "<br>🎉 Great job! Lesson finished."; 
+        } 
+      }, 850);
+    } else {
+      msg.innerHTML=`❌ <span class="bad">Try again</span> — hint: ${hintFor(it.text)}`;
+      
+      if(speechSynthesisSupported) {
+        const tryAgainMsg = SETS===EN ? "Try again" : (SETS===MS ? "Cuba lagi" : "再试一次");
+        speak(voice, tryAgainMsg);
+      }
+    }
+  }
+
+  checkBtn.addEventListener('click', check);
+  ans.addEventListener('keydown', e => { 
+    if(e.key === 'Enter') check(); 
+  });
+
+  function clearAnswer() {
+    ans.value = ""; 
+    ans.focus(); 
+    msg.textContent = ""; 
+    if(!builder.hidden) markAllUnused(); 
+  }
+
+  clearBtn.addEventListener('click', clearAnswer);
+
+  function prevItem() { 
+    if(i > 0){ 
+      i--; 
+      loadItem(); 
+    } 
+  }
+
+  prevBtn.addEventListener('click', prevItem);
+
+  function nextItem() { 
+    if(i < list.length - 1){ 
+      i++; 
+      loadItem(); 
+    } 
+  }
+
+  nextBtn.addEventListener('click', nextItem);
+
+  function speakCurrent() { 
+    const it = list[i]; 
+    if(speechSynthesisSupported) {
+      speak(voice, it.text);
+    } else {
+      msg.textContent = "Speech synthesis not supported in your browser";
+    }
+  }
+
+  sayBtn.addEventListener('click', speakCurrent);
+
+  function showHint() { 
+    const it = list[i]; 
+    msg.innerHTML = "💡 Hint: " + hintFor(it.text); 
+  }
+
+  hintBtn.addEventListener('click', showHint);
+
+  function revealAnswer() { 
+    const it = list[i]; 
+    msg.innerHTML = "👀 The answer is: <b>" + it.text + "</b>"; 
+  }
+
+  revealBtn.addEventListener('click', revealAnswer);
+
+  /* -------------- Sentence / Character builder -------------- */
+  function wordsFromSentence(t){ 
+    return t.replace(/[.?!]/g,"").split(/\s+/); 
+  }
+
+  function setupBuilder(it, isZh){
+    let pieces = [];
+    
+    if(it.sentence){
+      // For sentences in any language
+      pieces = shuffle(wordsFromSentence(it.text));
+    } else if(isZh && it.text.length > 1){
+      // For Chinese words with multiple characters
+      pieces = shuffle(it.text.split(""));
+    } else {
+      // Hide builder for single words/characters
+      builder.hidden = true; 
+      resetPieces.hidden = true; 
+      return;
+    }
+    
+    builder.hidden = false; 
+    resetPieces.hidden = false;
+    builder.innerHTML = "";
+    
+    pieces.forEach(word => {
+      const p = document.createElement('button');
+      p.className = 'piece'; 
+      p.textContent = word;
+      p.addEventListener('click', () => {
+        if(p.classList.contains('used')) return; 
+        p.classList.add('used');
+        ans.value = (ans.value.trim() + " " + word).trim() + (it.sentence ? " " : ""); 
+        ans.focus(); 
+      });
+      builder.appendChild(p);
+    });
+    
+    function resetTiles() { 
+      ans.value = ""; 
+      markAllUnused(); 
+      ans.focus(); 
+    }
+    
+    resetPieces.addEventListener('click', resetTiles);
+  }
+
+  function markAllUnused(){ 
+    [...builder.querySelectorAll('.piece')].forEach(x => x.classList.remove('used')); 
+  }
+
+  /* -------------- Hints & clues -------------- */
+  function hintFor(text){
+    if(SETS === ZH){ 
+      const p = PINYIN[text]; 
+      return p ? `拼音: <b>${p}</b>` : "中文汉字"; 
+    }
+    
+    const t = text.replace(/[.,!?]/g,"");
+    
+    if(t.includes(" ")){ 
+      const w = t.split(/\s+/); 
+      return `<b>${w[0]}</b> … <b>${w[w.length-1]}</b>`; 
+    }
+    
+    if(t.length <= 2) return t;
+    
+    return `${t[0]} ${"_ ".repeat(t.length-2)} ${t[t.length-1]}`;
+  }
+
+  function clueFor(text){
+    const t = (text || "").toLowerCase();
+    const d = document.createElement('div'); 
+    d.className = "big";
+    
+    const add = (e, cls = "") => { 
+      const el = document.createElement('div'); 
+      el.textContent = e; 
+      el.className = "big " + cls; 
+      d.appendChild(el); 
+    };
+
+    if(SETS === ZH){         /* simple icons for 汉字 */
+      if(text === "球") add("⚽");
+      else if(text === "读") add("📖");
+      else if(text === "进") add("➡️");
+      else if(text === "温") add("🌡️");
+      else if(text === "认") add("🧠");
+      else if(text.includes("书")) add("📚");
+      else if(text.includes("漂亮")) add("✨");
+      return d;
+    }
+
+    // English/Malay keywords → emoji
+    if(t.includes("baby")) add("👶","pulse");
+    if(t.includes("honey") || t.includes("madu")) add("🍯");
+    if(t.includes("key") || t.includes("kunci")) add("🔑","wiggle");
+    if(t.includes("sunny") || t.includes("sun") || t.includes("matahari")) add("☀️","sun");
+    if(t.includes("money")) add("💰");
+    if(t.includes("semut") || t.includes("ant")) add("🐜","wiggle");
+    if(t.includes("kaki") || t.includes("leg")) add("🦵");
+    if(t.includes("surat")) add("✉️");
+    if(t.includes("sayur")) add("🥦");
+    if(t.includes("sijil")) add("📜");
+    if(t.includes("sikat")) add("💇‍♀️");
+    if(t.includes("likes")) add("❤️","pulse");
+    if(t.includes("where") || t.includes("mana")) add("❓");
+    if(t.includes("gigit") || t.includes("bite")) add("🦷");
+
+    if(!d.childNodes.length){ 
+      const el = document.createElement('div'); 
+      el.textContent = text[0].toUpperCase(); 
+      d.appendChild(el); 
+    }
     return d;
   }
 
-  // English/Malay keywords → emoji
-  if(t.includes("baby")) add("👶","pulse");
-  if(t.includes("honey") || t.includes("madu")) add("🍯");
-  if(t.includes("key") || t.includes("kunci")) add("🔑","wiggle");
-  if(t.includes("sunny") || t.includes("sun") || t.includes("matahari")) add("☀️","sun");
-  if(t.includes("money")) add("💰");
-  if(t.includes("semut") || t.includes("ant")) add("🐜","wiggle");
-  if(t.includes("kaki") || t.includes("leg")) add("🦵");
-  if(t.includes("surat")) add("✉️");
-  if(t.includes("sayur")) add("🥦");
-  if(t.includes("sijil")) add("📜");
-  if(t.includes("sikat")) add("💇‍♀️");
-  if(t.includes("likes")) add("❤️","pulse");
-  if(t.includes("where") || t.includes("mana")) add("❓");
-  if(t.includes("gigit") || t.includes("bite")) add("🦷");
-
-  if(!d.childNodes.length){ 
-    const el = document.createElement('div'); 
-    el.textContent = text[0].toUpperCase(); 
-    d.appendChild(el); 
+  /* -------------- Utils + effects -------------- */
+  function shuffle(a){ 
+    for(let j = a.length - 1; j > 0; j--){ 
+      const k = (Math.random() * (j + 1)) | 0; 
+      [a[j], a[k]] = [a[k], a[j]]; 
+    } 
+    return a; 
   }
-  return d;
-}
 
-/* -------------- Utils + effects -------------- */
-function shuffle(a){ 
-  for(let j = a.length - 1; j > 0; j--){ 
-    const k = (Math.random() * (j + 1)) | 0; 
-    [a[j], a[k]] = [a[k], a[j]]; 
+  function updateBar(){ 
+    bar.style.width = ((i) / Math.max(1, (list.length - 1)) * 100) + "%"; 
+  }
+
+  function speak(lang, text){ 
+    if(!speechSynthesisSupported) return;
+    
+    speechSynthesis.cancel();
+    
+    const u = new SpeechSynthesisUtterance(text); 
+    u.lang = lang; 
+    u.rate = (lang === 'zh-CN' ? 0.85 : 0.95); 
+    u.pitch = 1; 
+    
+    speechSynthesis.speak(u); 
+  }
+
+  /* confetti (canvas hidden when idle so it never blocks clicks) */
+  const fx = document.getElementById('fx'), ctx = fx.getContext('2d'); 
+  let W, H; 
+
+  function resizeCanvas(){ 
+    W = fx.width = innerWidth; 
+    H = fx.height = innerHeight; 
   } 
-  return a; 
-}
 
-function updateBar(){ 
-  bar.style.width = ((i) / Math.max(1, (list.length - 1)) * 100) + "%"; 
-}
+  window.addEventListener('resize', resizeCanvas, {passive: true}); 
+  resizeCanvas();
 
-function speak(lang, text){ 
-  if(!speechSynthesisSupported) return;
-  
-  speechSynthesis.cancel();
-  
-  const u = new SpeechSynthesisUtterance(text); 
-  u.lang = lang; 
-  u.rate = (lang === 'zh-CN' ? 0.85 : 0.95); 
-  u.pitch = 1; 
-  
-  speechSynthesis.speak(u); 
-}
-
-/* confetti (canvas hidden when idle so it never blocks clicks) */
-const fx = document.getElementById('fx'), ctx = fx.getContext('2d'); 
-let W, H; 
-
-function resizeCanvas(){ 
-  W = fx.width = innerWidth; 
-  H = fx.height = innerHeight; 
-} 
-
-window.addEventListener('resize', resizeCanvas, {passive: true}); 
-resizeCanvas();
-
-function confetti(){ 
-  fx.style.display = 'block'; 
-  const n = 120;
-  const particles = [...Array(n)].map(() => ({
-    x: Math.random() * W,
-    y: -10,
-    vx: (Math.random() - 0.5) * 2,
-    vy: 2 + Math.random() * 4,
-    w: 6,
-    h: 10,
-    c: `hsl(${180 + Math.random() * 160} 90% 60%)`,
-    a: Math.random() * Math.PI
-  }));
-  
-  let time = 0;
-  
-  function loop(){
-    ctx.clearRect(0, 0, W, H);
+  function confetti(){ 
+    fx.style.display = 'block'; 
+    const n = 120;
+    const particles = [...Array(n)].map(() => ({
+      x: Math.random() * W,
+      y: -10,
+      vx: (Math.random() - 0.5) * 2,
+      vy: 2 + Math.random() * 4,
+      w: 6,
+      h: 10,
+      c: `hsl(${180 + Math.random() * 160} 90% 60%)`,
+      a: Math.random() * Math.PI
+    }));
     
-    particles.forEach(p => {
-      p.x += p.vx;
-      p.y += p.vy;
-      p.a += 0.1;
-      
-      ctx.save();
-      ctx.translate(p.x, p.y);
-      ctx.rotate(p.a);
-      ctx.fillStyle = p.c;
-      ctx.fillRect(-p.w/2, -p.h/2, p.w, p.h);
-      ctx.restore();
-    }); 
+    let time = 0;
     
-    if((time += 16) < 900) {
-      requestAnimationFrame(loop);
-    } else {
+    function loop(){
       ctx.clearRect(0, 0, W, H);
-      fx.style.display = 'none';
+      
+      particles.forEach(p => {
+        p.x += p.vx;
+        p.y += p.vy;
+        p.a += 0.1;
+        
+        ctx.save();
+        ctx.translate(p.x, p.y);
+        ctx.rotate(p.a);
+        ctx.fillStyle = p.c;
+        ctx.fillRect(-p.w/2, -p.h/2, p.w, p.h);
+        ctx.restore();
+      }); 
+      
+      if((time += 16) < 900) {
+        requestAnimationFrame(loop);
+      } else {
+        ctx.clearRect(0, 0, W, H);
+        fx.style.display = 'none';
+      }
     }
+    
+    loop();
   }
-  
-  loop();
-}
 
-/* -------------- Initialize -------------- */
-document.addEventListener('DOMContentLoaded', () => {
+  /* -------------- Initialize -------------- */
   setLang('en'); // default language on load
   
   // Disable say button if speech synthesis isn't supported
