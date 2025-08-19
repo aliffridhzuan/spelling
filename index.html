@@ -19,8 +19,9 @@
 
   .bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:10px}
   .tag{padding:6px 10px;background:#0e1632;border:1px solid var(--chip-b);border-radius:999px;color:var(--muted);font-size:12px}
-  .btn{background:var(--chip);border:1px solid var(--chip-b);color:var(--ink);border-radius:12px;padding:10px 12px;font-weight:700;cursor:pointer}
+  .btn{background:var(--chip);border:1px solid var(--chip-b);color:var(--ink);border-radius:12px;padding:10px 12px;font-weight:700;cursor:pointer;transition:transform 0.1s ease}
   .btn:active{transform:scale(.98)}
+  .btn:disabled{opacity:0.5;cursor:not-allowed}
   .prog{height:10px;background:#0e1632;border:1px solid var(--chip-b);border-radius:999px;overflow:hidden}
   .prog>i{display:block;height:100%;background:linear-gradient(90deg,#34d399,#60a5fa);width:0%}
   .barR{margin-left:auto;display:flex;gap:10px;align-items:center}
@@ -52,7 +53,7 @@
 
   /* sentence / character builder */
   .builder{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
-  .piece{background:#101a3a;border:1px dashed #2a3973;color:#cfe1ff;border-radius:10px;padding:8px 12px;cursor:pointer}
+  .piece{background:#101a3a;border:1px dashed #2a3973;color:#cfe1ff;border-radius:10px;padding:8px 12px;cursor:pointer;transition:opacity 0.2s ease}
   .piece.used{opacity:.35;pointer-events:none}
 
   .confetti{position:fixed;inset:0;pointer-events:none;z-index:0;display:none}
@@ -104,7 +105,7 @@
         <button id="resetPieces" class="btn" hidden>🔁 Reset tiles</button>
       </div>
       <div id="msg" class="msg" aria-live="polite"></div>
-      <div class="foot">Tip: Press <b>Enter</b> to check. Sentences don’t need exact capitals or punctuation.</div>
+      <div class="foot">Tip: Press <b>Enter</b> to check. Sentences don't need exact capitals or punctuation.</div>
     </div>
   </div>
 </div>
@@ -131,9 +132,18 @@ const MS = {
   ]
 };
 /* ZH 25-8-2025 (Simplified) */
-const ZH = { "25-8-2025": [ W("认"), W("进"), W("读"), W("球"), W("温") ] };
+const ZH = { 
+  "25-8-2025": [ 
+    W("认"), W("进"), W("读"), W("球"), W("温"),
+    S("我读很多书。"), S("这个球很漂亮。")
+  ] 
+};
 /* Pinyin hints for zh */
-const PINYIN = { "认":"rèn", "进":"jìn", "读":"dú", "球":"qiú", "温":"wēn" };
+const PINYIN = { 
+  "认":"rèn", "进":"jìn", "读":"dú", "球":"qiú", "温":"wēn",
+  "我读很多书。":"wǒ dú hěn duō shū",
+  "这个球很漂亮。":"zhè ge qiú hěn piào liang"
+};
 
 /* -------------- UI refs -------------- */
 const tabEn=document.getElementById('tab-en'), tabMs=document.getElementById('tab-ms'), tabZh=document.getElementById('tab-zh');
@@ -157,6 +167,7 @@ const shuffleBox=document.getElementById('shuffle');
 /* -------------- State -------------- */
 let SETS = EN, voice="en-US";  // default English
 let currentDate=null, list=[], i=0, score=0, stars=0;
+let speechSynthesisSupported = 'speechSynthesis' in window;
 
 /* -------------- Instructions text -------------- */
 function setHowTo(lang){
@@ -179,153 +190,388 @@ function setHowTo(lang){
 
 /* -------------- Tabs -------------- */
 function setLang(lang){
-  if(lang==='en'){ SETS=EN; voice="en-US";
-    tabEn.setAttribute('aria-pressed','true'); tabMs.setAttribute('aria-pressed','false'); tabZh.setAttribute('aria-pressed','false');
-  }else if(lang==='ms'){ SETS=MS; voice="ms-MY";
-    tabEn.setAttribute('aria-pressed','false'); tabMs.setAttribute('aria-pressed','true'); tabZh.setAttribute('aria-pressed','false');
-  }else{ SETS=ZH; voice="zh-CN";
-    tabEn.setAttribute('aria-pressed','false'); tabMs.setAttribute('aria-pressed','false'); tabZh.setAttribute('aria-pressed','true');
+  if(lang==='en'){ 
+    SETS=EN; 
+    voice="en-US";
+    tabEn.setAttribute('aria-pressed','true'); 
+    tabMs.setAttribute('aria-pressed','false'); 
+    tabZh.setAttribute('aria-pressed','false');
+  }else if(lang==='ms'){ 
+    SETS=MS; 
+    voice="ms-MY";
+    tabEn.setAttribute('aria-pressed','false'); 
+    tabMs.setAttribute('aria-pressed','true'); 
+    tabZh.setAttribute('aria-pressed','false');
+  }else{ 
+    SETS=ZH; 
+    voice="zh-CN";
+    tabEn.setAttribute('aria-pressed','false'); 
+    tabMs.setAttribute('aria-pressed','false'); 
+    tabZh.setAttribute('aria-pressed','true');
   }
   setHowTo(lang);
   buildDateChips();
   const first = Object.keys(SETS)[0];
   pickDate(first);
 }
-tabEn.onclick=()=>setLang('en');
-tabMs.onclick=()=>setLang('ms');
-tabZh.onclick=()=>setLang('zh');
+
+tabEn.addEventListener('click', () => setLang('en'));
+tabMs.addEventListener('click', () => setLang('ms'));
+tabZh.addEventListener('click', () => setLang('zh'));
 
 /* -------------- Dates list (chips) -------------- */
 function buildDateChips(){
   dateChips.innerHTML="";
-  Object.keys(SETS).forEach(d=>{
+  Object.keys(SETS).forEach(d => {
     const b=document.createElement('button');
-    b.className='chip'; b.textContent=d; b.dataset.date=d;
-    b.onclick=()=>pickDate(d);
+    b.className='chip'; 
+    b.textContent=d; 
+    b.dataset.date=d;
+    b.addEventListener('click', () => pickDate(d));
     dateChips.appendChild(b);
   });
 }
+
 function highlightDate(d){
-  [...dateChips.children].forEach(c=>c.classList.toggle('active',c.dataset.date===d));
+  [...dateChips.children].forEach(c => c.classList.toggle('active', c.dataset.date === d));
 }
+
 function pickDate(d){
-  currentDate=d; highlightDate(d);
-  list=SETS[d].slice(); if(shuffleBox.checked) shuffle(list);
-  i=0; score=0; stars=0; scoreEl.textContent=score; starsEl.textContent='⭐️'+stars;
-  totalEl.textContent=list.length; loadItem();
+  currentDate=d; 
+  highlightDate(d);
+  list=SETS[d].slice(); 
+  if(shuffleBox.checked) shuffle(list);
+  i=0; 
+  score=0; 
+  stars=0; 
+  scoreEl.textContent=score; 
+  starsEl.textContent='⭐️'+stars;
+  totalEl.textContent=list.length; 
+  loadItem();
 }
-shuffleBox.onchange=()=>{ if(currentDate) pickDate(currentDate); };
+
+shuffleBox.addEventListener('change', () => { 
+  if(currentDate) pickDate(currentDate); 
+});
 
 /* -------------- Item flow -------------- */
 function loadItem(){
-  const it=list[i];
-  idxEl.textContent=i+1;
+  const it = list[i];
+  idxEl.textContent = i+1;
   const isZh = (SETS===ZH);
-  titleEl.textContent = it.sentence ? "Type the whole sentence" : (isZh ? "Build the word or type the character" : "Spell the word");
-  clueBox.innerHTML=""; clueBox.appendChild(clueFor(it.text));
-  ans.value=""; msg.textContent=""; ans.focus();
+  
+  // Update title based on content type
+  if(it.sentence) {
+    titleEl.textContent = isZh ? "Type the whole sentence" : "Type the sentence";
+  } else {
+    titleEl.textContent = isZh ? (it.text.length > 1 ? "Build the word" : "Type the character") : "Spell the word";
+  }
+  
+  clueBox.innerHTML=""; 
+  clueBox.appendChild(clueFor(it.text));
+  ans.value=""; 
+  msg.textContent=""; 
+  ans.focus();
+  
+  // Update button states
+  prevBtn.disabled = i === 0;
+  nextBtn.disabled = i === list.length - 1;
+  
   setupBuilder(it, isZh);
   updateBar();
 }
-function normalize(s){ return (s||"").toLowerCase().replace(/[.,!?]/g,"").replace(/\s+/g," ").trim(); }
+
+function normalize(s){ 
+  return (s||"").toLowerCase().replace(/[.,!?]/g,"").replace(/\s+/g," ").trim(); 
+}
+
 function check(){
-  const it=list[i];
-  const ok = normalize(ans.value) === normalize(it.text);
-  if(ok){
+  const it = list[i];
+  const userAnswer = normalize(ans.value);
+  const correctAnswer = normalize(it.text);
+  const isCorrect = userAnswer === correctAnswer;
+  
+  if(isCorrect){
     msg.innerHTML=`✅ <span class="good">Correct!</span> <b>${it.text}</b>`;
-    score+=10; scoreEl.textContent=score; stars++; starsEl.textContent='⭐️'+stars; confetti(); speak(voice,it.text);
-    setTimeout(()=>{ if(i<list.length-1){ i++; loadItem(); } else { msg.innerHTML+="<br>🎉 Great job! Lesson finished."; } }, 850);
-  }else{
+    score += 10; 
+    scoreEl.textContent = score; 
+    stars++; 
+    starsEl.textContent = '⭐️' + stars; 
+    confetti(); 
+    
+    if(speechSynthesisSupported) {
+      speak(voice, it.text);
+    }
+    
+    setTimeout(() => { 
+      if(i < list.length - 1){ 
+        i++; 
+        loadItem(); 
+      } else { 
+        msg.innerHTML += "<br>🎉 Great job! Lesson finished."; 
+      } 
+    }, 850);
+  } else {
     msg.innerHTML=`❌ <span class="bad">Try again</span> — hint: ${hintFor(it.text)}`;
-    speak(voice, SETS===EN ? "Try again" : (SETS===MS ? "Cuba lagi" : "再试一次"));
+    
+    if(speechSynthesisSupported) {
+      const tryAgainMsg = SETS===EN ? "Try again" : (SETS===MS ? "Cuba lagi" : "再试一次");
+      speak(voice, tryAgainMsg);
+    }
   }
 }
-checkBtn.onclick=check;
-ans.addEventListener('keydown',e=>{ if(e.key==='Enter') check(); });
-clearBtn.onclick=()=>{ ans.value=""; ans.focus(); msg.textContent=""; if(!builder.hidden) markAllUnused(); };
-prevBtn.onclick=()=>{ if(i>0){ i--; loadItem(); } };
-nextBtn.onclick=()=>{ if(i<list.length-1){ i++; loadItem(); } };
-sayBtn.onclick =()=>{ const it=list[i]; speak(voice,it.text); };
-hintBtn.onclick=()=>{ const it=list[i]; msg.innerHTML="💡 Hint: "+hintFor(it.text); };
-revealBtn.onclick=()=>{ const it=list[i]; msg.innerHTML="👀 The answer is: <b>"+it.text+"</b>"; };
+
+checkBtn.addEventListener('click', check);
+ans.addEventListener('keydown', e => { 
+  if(e.key === 'Enter') check(); 
+});
+
+clearBtn.addEventListener('click', () => { 
+  ans.value = ""; 
+  ans.focus(); 
+  msg.textContent = ""; 
+  if(!builder.hidden) markAllUnused(); 
+});
+
+prevBtn.addEventListener('click', () => { 
+  if(i > 0){ 
+    i--; 
+    loadItem(); 
+  } 
+});
+
+nextBtn.addEventListener('click', () => { 
+  if(i < list.length - 1){ 
+    i++; 
+    loadItem(); 
+  } 
+});
+
+sayBtn.addEventListener('click', () => { 
+  const it = list[i]; 
+  if(speechSynthesisSupported) {
+    speak(voice, it.text);
+  } else {
+    msg.textContent = "Speech synthesis not supported in your browser";
+  }
+});
+
+hintBtn.addEventListener('click', () => { 
+  const it = list[i]; 
+  msg.innerHTML = "💡 Hint: " + hintFor(it.text); 
+});
+
+revealBtn.addEventListener('click', () => { 
+  const it = list[i]; 
+  msg.innerHTML = "👀 The answer is: <b>" + it.text + "</b>"; 
+});
 
 /* -------------- Sentence / Character builder -------------- */
-function wordsFromSentence(t){ return t.replace(/[.?!]/g,"").split(/\s+/); }
+function wordsFromSentence(t){ 
+  return t.replace(/[.?!]/g,"").split(/\s+/); 
+}
+
 function setupBuilder(it, isZh){
-  // show tiles for sentences (EN/BM) and for Mandarin words with length>1
   let pieces = [];
+  
   if(it.sentence){
+    // For sentences in any language
     pieces = shuffle(wordsFromSentence(it.text));
-  }else if(isZh && it.text.length > 1){
-    pieces = shuffle(it.text.split(""));        // 汉字拆分为字卡
-  }else{
-    builder.hidden=true; resetPieces.hidden=true; return;
+  } else if(isZh && it.text.length > 1){
+    // For Chinese words with multiple characters
+    pieces = shuffle(it.text.split(""));
+  } else {
+    // Hide builder for single words/characters
+    builder.hidden = true; 
+    resetPieces.hidden = true; 
+    return;
   }
-  builder.hidden=false; resetPieces.hidden=false;
-  builder.innerHTML="";
-  pieces.forEach(word=>{
-    const p=document.createElement('button');
-    p.className='piece'; p.textContent=word;
-    p.onclick=()=>{ if(p.classList.contains('used')) return; p.classList.add('used');
-      ans.value=(ans.value.trim()+" "+word).trim()+" "; ans.focus(); };
+  
+  builder.hidden = false; 
+  resetPieces.hidden = false;
+  builder.innerHTML = "";
+  
+  pieces.forEach(word => {
+    const p = document.createElement('button');
+    p.className = 'piece'; 
+    p.textContent = word;
+    p.addEventListener('click', () => {
+      if(p.classList.contains('used')) return; 
+      p.classList.add('used');
+      ans.value = (ans.value.trim() + " " + word).trim() + (it.sentence ? " " : ""); 
+      ans.focus(); 
+    });
     builder.appendChild(p);
   });
-  resetPieces.onclick=()=>{ ans.value=""; markAllUnused(); ans.focus(); };
+  
+  resetPieces.addEventListener('click', () => { 
+    ans.value = ""; 
+    markAllUnused(); 
+    ans.focus(); 
+  });
 }
-function markAllUnused(){ [...builder.querySelectorAll('.piece')].forEach(x=>x.classList.remove('used')); }
+
+function markAllUnused(){ 
+  [...builder.querySelectorAll('.piece')].forEach(x => x.classList.remove('used')); 
+}
 
 /* -------------- Hints & clues -------------- */
 function hintFor(text){
-  if(SETS===ZH){ const p = PINYIN[text]; return p ? `拼音: <b>${p}</b>` : "中文汉字"; }
-  const t=text.replace(/[.,!?]/g,"");
-  if(t.includes(" ")){ const w=t.split(/\s+/); return `<b>${w[0]}</b> … <b>${w[w.length-1]}</b>`; }
-  if(t.length<=2) return t;
+  if(SETS === ZH){ 
+    const p = PINYIN[text]; 
+    return p ? `拼音: <b>${p}</b>` : "中文汉字"; 
+  }
+  
+  const t = text.replace(/[.,!?]/g,"");
+  
+  if(t.includes(" ")){ 
+    const w = t.split(/\s+/); 
+    return `<b>${w[0]}</b> … <b>${w[w.length-1]}</b>`; 
+  }
+  
+  if(t.length <= 2) return t;
+  
   return `${t[0]} ${"_ ".repeat(t.length-2)} ${t[t.length-1]}`;
 }
-function clueFor(text){
-  const t=(text||"").toLowerCase();
-  const d=document.createElement('div'); d.className="big";
-  const add=(e,cls="")=>{ const el=document.createElement('div'); el.textContent=e; el.className="big "+cls; d.appendChild(el); };
 
-  if(SETS===ZH){         /* simple icons for 汉字 */
-    if(text==="球") add("⚽");
-    else if(text==="读") add("📖");
-    else if(text==="进") add("➡️");
-    else if(text==="温") add("🌡️");
-    else if(text==="认") add("🧠");
+function clueFor(text){
+  const t = (text || "").toLowerCase();
+  const d = document.createElement('div'); 
+  d.className = "big";
+  
+  const add = (e, cls = "") => { 
+    const el = document.createElement('div'); 
+    el.textContent = e; 
+    el.className = "big " + cls; 
+    d.appendChild(el); 
+  };
+
+  if(SETS === ZH){         /* simple icons for 汉字 */
+    if(text === "球") add("⚽");
+    else if(text === "读") add("📖");
+    else if(text === "进") add("➡️");
+    else if(text === "温") add("🌡️");
+    else if(text === "认") add("🧠");
+    else if(text.includes("书")) add("📚");
+    else if(text.includes("漂亮")) add("✨");
     return d;
   }
 
   // English/Malay keywords → emoji
   if(t.includes("baby")) add("👶","pulse");
-  if(t.includes("honey")||t.includes("madu")) add("🍯");
-  if(t.includes("key")||t.includes("kunci")) add("🔑","wiggle");
-  if(t.includes("sunny")||t.includes("sun")||t.includes("matahari")) add("☀️","sun");
-  if(t.includes("semut")||t.includes("ant")) add("🐜","wiggle");
-  if(t.includes("kaki")||t.includes("leg")) add("🦵");
+  if(t.includes("honey") || t.includes("madu")) add("🍯");
+  if(t.includes("key") || t.includes("kunci")) add("🔑","wiggle");
+  if(t.includes("sunny") || t.includes("sun") || t.includes("matahari")) add("☀️","sun");
+  if(t.includes("money")) add("💰");
+  if(t.includes("semut") || t.includes("ant")) add("🐜","wiggle");
+  if(t.includes("kaki") || t.includes("leg")) add("🦵");
   if(t.includes("surat")) add("✉️");
   if(t.includes("sayur")) add("🥦");
   if(t.includes("sijil")) add("📜");
   if(t.includes("sikat")) add("💇‍♀️");
   if(t.includes("likes")) add("❤️","pulse");
-  if(t.includes("where")||t.includes("mana")) add("❓");
+  if(t.includes("where") || t.includes("mana")) add("❓");
+  if(t.includes("gigit") || t.includes("bite")) add("🦷");
 
-  if(!d.childNodes.length){ const el=document.createElement('div'); el.textContent=text[0].toUpperCase(); d.appendChild(el); }
+  if(!d.childNodes.length){ 
+    const el = document.createElement('div'); 
+    el.textContent = text[0].toUpperCase(); 
+    d.appendChild(el); 
+  }
   return d;
 }
 
 /* -------------- Utils + effects -------------- */
-function shuffle(a){ for(let j=a.length-1;j>0;j--){ const k=(Math.random()*(j+1))|0; [a[j],a[k]]=[a[k],a[j]]; } return a; }
-function updateBar(){ bar.style.width=((i)/Math.max(1,(list.length-1))*100)+"%"; }
-function speak(lang,text){ if(!('speechSynthesis' in window)) return; const u=new SpeechSynthesisUtterance(text); u.lang=lang; u.rate=(lang==='zh-CN'?0.85:0.95); u.pitch=1; speechSynthesis.cancel(); speechSynthesis.speak(u); }
+function shuffle(a){ 
+  for(let j = a.length - 1; j > 0; j--){ 
+    const k = (Math.random() * (j + 1)) | 0; 
+    [a[j], a[k]] = [a[k], a[j]]; 
+  } 
+  return a; 
+}
+
+function updateBar(){ 
+  bar.style.width = ((i) / Math.max(1, (list.length - 1)) * 100) + "%"; 
+}
+
+function speak(lang, text){ 
+  if(!speechSynthesisSupported) return;
+  
+  speechSynthesis.cancel();
+  
+  const u = new SpeechSynthesisUtterance(text); 
+  u.lang = lang; 
+  u.rate = (lang === 'zh-CN' ? 0.85 : 0.95); 
+  u.pitch = 1; 
+  
+  speechSynthesis.speak(u); 
+}
 
 /* confetti (canvas hidden when idle so it never blocks clicks) */
-const fx=document.getElementById('fx'), ctx=fx.getContext('2d'); let W,H; function rs(){W=fx.width=innerWidth;H=fx.height=innerHeight} addEventListener('resize',rs,{passive:true}); rs();
-function confetti(){ fx.style.display='block'; const n=120,b=[...Array(n)].map(()=>({x:Math.random()*W,y:-10,vx:(Math.random()-0.5)*2,vy:2+Math.random()*4,w:6,h:10,c:`hsl(${180+Math.random()*160} 90% 60%)`,a:Math.random()*Math.PI}));
-  let t=0;(function loop(){ctx.clearRect(0,0,W,H);b.forEach(p=>{p.x+=p.vx;p.y+=p.vy;p.a+=0.1;ctx.save();ctx.translate(p.x,p.y);ctx.rotate(p.a);ctx.fillStyle=p.c;ctx.fillRect(-p.w/2,-p.h/2,p.w,p.h);ctx.restore();}); if((t+=16)<900) requestAnimationFrame(loop); else {ctx.clearRect(0,0,W,H); fx.style.display='none';}})(); }
+const fx = document.getElementById('fx'), ctx = fx.getContext('2d'); 
+let W, H; 
 
-/* -------------- init -------------- */
-setLang('en'); // default language on load
+function resizeCanvas(){ 
+  W = fx.width = innerWidth; 
+  H = fx.height = innerHeight; 
+} 
+
+window.addEventListener('resize', resizeCanvas, {passive: true}); 
+resizeCanvas();
+
+function confetti(){ 
+  fx.style.display = 'block'; 
+  const n = 120;
+  const particles = [...Array(n)].map(() => ({
+    x: Math.random() * W,
+    y: -10,
+    vx: (Math.random() - 0.5) * 2,
+    vy: 2 + Math.random() * 4,
+    w: 6,
+    h: 10,
+    c: `hsl(${180 + Math.random() * 160} 90% 60%)`,
+    a: Math.random() * Math.PI
+  }));
+  
+  let time = 0;
+  
+  function loop(){
+    ctx.clearRect(0, 0, W, H);
+    
+    particles.forEach(p => {
+      p.x += p.vx;
+      p.y += p.vy;
+      p.a += 0.1;
+      
+      ctx.save();
+      ctx.translate(p.x, p.y);
+      ctx.rotate(p.a);
+      ctx.fillStyle = p.c;
+      ctx.fillRect(-p.w/2, -p.h/2, p.w, p.h);
+      ctx.restore();
+    }); 
+    
+    if((time += 16) < 900) {
+      requestAnimationFrame(loop);
+    } else {
+      ctx.clearRect(0, 0, W, H);
+      fx.style.display = 'none';
+    }
+  }
+  
+  loop();
+}
+
+/* -------------- Initialize -------------- */
+document.addEventListener('DOMContentLoaded', () => {
+  setLang('en'); // default language on load
+  
+  // Disable say button if speech synthesis isn't supported
+  if(!speechSynthesisSupported) {
+    sayBtn.disabled = true;
+    sayBtn.title = "Text-to-speech not supported in your browser";
+  }
+});
 </script>
 </body>
 </html>
