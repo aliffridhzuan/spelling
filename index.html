@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Fun Spelling Game</title>
+    <title>Multilingual Spelling Game</title>
     <style>
         :root {
             --primary: #FF6B6B;
@@ -37,100 +37,6 @@
             color: var(--primary);
             font-size: 2.5rem;
             margin-bottom: 10px;
-            text-shadow: 2px 2px 0 rgba(0,0,0,0.1);
-        }
-        
-        .subtitle {
-            color: var(--secondary);
-            font-size: 1.2rem;
-            margin-bottom: 30px;
-        }
-        
-        .game-area {
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-        }
-        
-        .clue-box {
-            background-color: var(--accent);
-            border-radius: 15px;
-            padding: 30px;
-            min-height: 200px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 5rem;
-            box-shadow: inset 0 0 10px rgba(0,0,0,0.1);
-        }
-        
-        .clue-emoji {
-            animation: bounce 1s infinite alternate;
-        }
-        
-        @keyframes bounce {
-            from { transform: translateY(0); }
-            to { transform: translateY(-20px); }
-        }
-        
-        .input-area {
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-        }
-        
-        input[type="text"] {
-            padding: 15px;
-            font-size: 1.5rem;
-            border: 3px solid var(--secondary);
-            border-radius: 10px;
-            text-align: center;
-            font-family: 'Comic Sans MS', cursive, sans-serif;
-        }
-        
-        .buttons {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            justify-content: center;
-        }
-        
-        button {
-            background-color: var(--primary);
-            color: white;
-            border: none;
-            border-radius: 50px;
-            padding: 12px 20px;
-            font-size: 1.2rem;
-            font-family: 'Comic Sans MS', cursive, sans-serif;
-            cursor: pointer;
-            transition: all 0.3s;
-            box-shadow: 0 4px 0 rgba(0,0,0,0.2);
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        
-        button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 0 rgba(0,0,0,0.2);
-        }
-        
-        button:active {
-            transform: translateY(2px);
-            box-shadow: 0 2px 0 rgba(0,0,0,0.2);
-        }
-        
-        .check-btn {
-            background-color: var(--correct);
-        }
-        
-        .hint-btn {
-            background-color: var(--secondary);
-        }
-        
-        .speak-btn {
-            background-color: #FF9E7D;
         }
         
         .language-tabs {
@@ -152,6 +58,110 @@
         .language-tab.active {
             background-color: var(--secondary);
             color: white;
+        }
+        
+        .instructions {
+            background-color: #E3F2FD;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 20px;
+            text-align: left;
+        }
+        
+        .clue-box {
+            background-color: var(--accent);
+            border-radius: 15px;
+            padding: 30px;
+            min-height: 200px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 5rem;
+            margin-bottom: 20px;
+        }
+        
+        .input-area {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        
+        input[type="text"] {
+            padding: 15px;
+            font-size: 1.5rem;
+            border: 3px solid var(--secondary);
+            border-radius: 10px;
+            text-align: center;
+        }
+        
+        .buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+        }
+        
+        button {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 50px;
+            padding: 12px 20px;
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .check-btn {
+            background-color: var(--correct);
+        }
+        
+        .hint-btn {
+            background-color: var(--secondary);
+        }
+        
+        .message {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 10px;
+            font-size: 1.2rem;
+        }
+        
+        .correct {
+            background-color: rgba(107, 203, 119, 0.2);
+            color: var(--correct);
+            animation: pop 0.5s;
+        }
+        
+        .wrong {
+            background-color: rgba(255, 107, 107, 0.2);
+            color: var(--wrong);
+            animation: shake 0.5s;
+        }
+        
+        .character-tiles {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 15px;
+        }
+        
+        .character-tile {
+            background-color: var(--accent);
+            width: 60px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            border-radius: 10px;
+            cursor: pointer;
+        }
+        
+        .character-tile.used {
+            opacity: 0.3;
+            pointer-events: none;
         }
         
         .progress {
@@ -178,28 +188,6 @@
             transition: width 0.5s;
         }
         
-        .message {
-            margin-top: 20px;
-            padding: 15px;
-            border-radius: 10px;
-            font-size: 1.2rem;
-            display: none;
-        }
-        
-        .correct {
-            background-color: rgba(107, 203, 119, 0.2);
-            color: var(--correct);
-            display: block;
-            animation: pop 0.5s;
-        }
-        
-        .wrong {
-            background-color: rgba(255, 107, 107, 0.2);
-            color: var(--wrong);
-            display: block;
-            animation: shake 0.5s;
-        }
-        
         @keyframes pop {
             0% { transform: scale(0.8); }
             50% { transform: scale(1.1); }
@@ -210,52 +198,6 @@
             0%, 100% { transform: translateX(0); }
             20%, 60% { transform: translateX(-10px); }
             40%, 80% { transform: translateX(10px); }
-        }
-        
-        .stars {
-            display: flex;
-            justify-content: center;
-            gap: 5px;
-            margin-top: 10px;
-        }
-        
-        .star {
-            font-size: 2rem;
-            color: gold;
-            text-shadow: 0 0 5px rgba(0,0,0,0.2);
-        }
-        
-        .character-tiles {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            justify-content: center;
-            margin-top: 15px;
-        }
-        
-        .character-tile {
-            background-color: var(--accent);
-            width: 60px;
-            height: 60px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 2rem;
-            border-radius: 10px;
-            cursor: pointer;
-            box-shadow: 0 4px 0 rgba(0,0,0,0.1);
-            transition: all 0.3s;
-        }
-        
-        .character-tile:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 6px 0 rgba(0,0,0,0.1);
-        }
-        
-        .character-tile.used {
-            opacity: 0.3;
-            transform: scale(0.9);
-            pointer-events: none;
         }
         
         .confetti {
@@ -272,8 +214,7 @@
 </head>
 <body>
     <div class="container">
-        <h1>Fun Spelling Game</h1>
-        <p class="subtitle">Learn words in English, Bahasa, and Chinese!</p>
+        <h1>Multilingual Spelling Game</h1>
         
         <div class="language-tabs">
             <div class="language-tab active" data-lang="en">English</div>
@@ -281,27 +222,23 @@
             <div class="language-tab" data-lang="zh">中文</div>
         </div>
         
-        <div class="game-area">
-            <div class="clue-box">
-                <div class="clue-emoji">👶</div>
-            </div>
+        <div class="instructions" id="instructions">
+            <!-- Instructions will be set by JavaScript -->
+        </div>
+        
+        <div class="clue-box" id="clue-box">
+            <div id="clue-content">👶</div>
+        </div>
+        
+        <div class="input-area">
+            <input type="text" id="answer-input" placeholder="Type your answer..." autocomplete="off">
             
-            <div class="input-area">
-                <input type="text" id="answer-input" placeholder="Type the word here..." autocomplete="off">
-                
-                <div class="character-tiles" id="character-tiles" style="display: none;"></div>
-                
-                <div class="buttons">
-                    <button class="check-btn" id="check-btn">
-                        <span>✅</span> Check
-                    </button>
-                    <button class="hint-btn" id="hint-btn">
-                        <span>💡</span> Hint
-                    </button>
-                    <button class="speak-btn" id="speak-btn">
-                        <span>🔊</span> Say It
-                    </button>
-                </div>
+            <div class="character-tiles" id="character-tiles"></div>
+            
+            <div class="buttons">
+                <button class="check-btn" id="check-btn">Check</button>
+                <button class="hint-btn" id="hint-btn">Hint</button>
+                <button id="speak-btn">Say It</button>
             </div>
             
             <div class="message" id="message"></div>
@@ -312,76 +249,82 @@
                     <div class="progress-fill" id="progress-fill"></div>
                 </div>
             </div>
-            
-            <div class="stars" id="stars">
-                <div class="star">⭐</div>
-                <div class="star">⭐</div>
-                <div class="star">⭐</div>
-            </div>
         </div>
     </div>
-    
+
     <canvas class="confetti" id="confetti-canvas"></canvas>
-    
+
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // Game data
+            // Game data for all languages
             const words = {
                 en: [
-                    { word: "baby", emoji: "👶", hint: "b _ _ y" },
-                    { word: "sun", emoji: "☀️", hint: "s _ n" },
-                    { word: "happy", emoji: "😊", hint: "h _ _ _ y" },
-                    { word: "apple", emoji: "🍎", hint: "a _ _ _ e" },
-                    { sentence: "I love apples", emoji: "🍎❤️", hint: "I _ _ _ apples" }
+                    { type: 'word', text: 'baby', emoji: '👶', hint: 'b _ _ y' },
+                    { type: 'word', text: 'key', emoji: '🔑', hint: 'k _ y' },
+                    { type: 'word', text: 'money', emoji: '💰', hint: 'm _ _ _ y' },
+                    { type: 'word', text: 'sunny', emoji: '☀️', hint: 's _ _ _ y' },
+                    { type: 'word', text: 'honey', emoji: '🍯', hint: 'h _ _ _ y' },
+                    { type: 'sentence', text: 'The baby likes honey', emoji: '👶❤️🍯', hint: 'The _ _ _ _ likes _ _ _ _ _' },
+                    { type: 'sentence', text: 'Where is the key', emoji: '🔑❓', hint: '_ _ _ _ _ is the _ _ _' }
                 ],
                 ms: [
-                    { word: "matahari", emoji: "☀️", hint: "m _ _ _ _ _ _ i" },
-                    { word: "buku", emoji: "📖", hint: "b _ _ u" },
-                    { word: "gajah", emoji: "🐘", hint: "g _ _ _ h" },
-                    { sentence: "Saya suka membaca", emoji: "📚😊", hint: "S _ _ _ suka membaca" }
+                    { type: 'word', text: 'sunat', emoji: '✂️', hint: 's _ _ _ t' },
+                    { type: 'word', text: 'semut', emoji: '🐜', hint: 's _ _ _ t' },
+                    { type: 'word', text: 'sayur', emoji: '🥦', hint: 's _ _ _ r' },
+                    { type: 'word', text: 'sijil', emoji: '📜', hint: 's _ _ _ l' },
+                    { type: 'word', text: 'sikat', emoji: '💇', hint: 's _ _ _ t' },
+                    { type: 'sentence', text: 'Semut gigit kaki saya', emoji: '🐜🦷🦵', hint: '_ _ _ _ _ gigit _ _ _ saya' }
                 ],
                 zh: [
-                    { word: "猫", emoji: "🐱", pinyin: "māo", meaning: "cat" },
-                    { word: "狗", emoji: "🐶", pinyin: "gǒu", meaning: "dog" },
-                    { word: "书", emoji: "📖", pinyin: "shū", meaning: "book" },
-                    { word: "你好", emoji: "👋", pinyin: "nǐ hǎo", meaning: "hello" }
+                    { type: 'character', text: '认', pinyin: 'rèn', meaning: 'recognize', emoji: '🧠' },
+                    { type: 'character', text: '进', pinyin: 'jìn', meaning: 'enter', emoji: '➡️' },
+                    { type: 'character', text: '读', pinyin: 'dú', meaning: 'read', emoji: '📖' },
+                    { type: 'character', text: '球', pinyin: 'qiú', meaning: 'ball', emoji: '⚽' },
+                    { type: 'character', text: '温', pinyin: 'wēn', meaning: 'warm', emoji: '🌡️' },
+                    { type: 'sentence', text: '我读很多书。', pinyin: 'wǒ dú hěn duō shū', meaning: 'I read many books' },
+                    { type: 'sentence', text: '这个球很漂亮。', pinyin: 'zhè ge qiú hěn piào liang', meaning: 'This ball is very beautiful' }
                 ]
             };
-            
-            // Game state
-            let currentLanguage = 'en';
-            let currentWords = words.en;
-            let currentIndex = 0;
-            let score = 0;
-            let stars = 0;
-            
-            // DOM elements
-            const clueBox = document.querySelector('.clue-box');
+
+            // Instruction texts
+            const instructions = {
+                en: "<h3>How to Play:</h3><p><strong>Words:</strong> Look at the emoji clue and type the word</p><p><strong>Sentences:</strong> Type the full sentence</p><p><strong>Hint:</strong> Shows first/last letters</p><p><strong>Say It:</strong> Hear the pronunciation</p>",
+                ms: "<h3>Cara Bermain:</h3><p><strong>Perkataan:</strong> Lihat emoji dan taip perkataan</p><p><strong>Ayat:</strong> Taip seluruh ayat</p><p><strong>Petunjuk:</strong> Tunjukkan huruf pertama/terakhir</p><p><strong>Dengarkan:</strong> Dengar sebutan</p>",
+                zh: "<h3>如何玩:</h3><p><strong>单字:</strong> 看表情符号并输入汉字</p><p><strong>句子:</strong> 点击下面的字卡组合</p><p><strong>提示:</strong> 显示拼音和意思</p><p><strong>发音:</strong> 听正确发音</p>"
+            };
+
+            // Game elements
+            const clueBox = document.getElementById('clue-box');
+            const clueContent = document.getElementById('clue-content');
             const answerInput = document.getElementById('answer-input');
             const checkBtn = document.getElementById('check-btn');
             const hintBtn = document.getElementById('hint-btn');
             const speakBtn = document.getElementById('speak-btn');
             const messageDiv = document.getElementById('message');
+            const characterTiles = document.getElementById('character-tiles');
             const progressText = document.getElementById('progress-text');
             const progressFill = document.getElementById('progress-fill');
-            const starsContainer = document.getElementById('stars');
-            const characterTiles = document.getElementById('character-tiles');
+            const instructionsDiv = document.getElementById('instructions');
             const languageTabs = document.querySelectorAll('.language-tab');
             const confettiCanvas = document.getElementById('confetti-canvas');
-            
+
+            let currentLanguage = 'en';
+            let currentWords = words.en;
+            let currentIndex = 0;
+            let currentWord = currentWords[currentIndex];
+
             // Initialize game
             loadWord();
-            
+            updateInstructions();
+
             // Event listeners
             checkBtn.addEventListener('click', checkAnswer);
             hintBtn.addEventListener('click', showHint);
             speakBtn.addEventListener('click', speakWord);
             answerInput.addEventListener('keypress', function(e) {
-                if (e.key === 'Enter') {
-                    checkAnswer();
-                }
+                if (e.key === 'Enter') checkAnswer();
             });
-            
+
             languageTabs.forEach(tab => {
                 tab.addEventListener('click', function() {
                     // Update active tab
@@ -392,37 +335,31 @@
                     currentLanguage = this.dataset.lang;
                     currentWords = words[currentLanguage];
                     currentIndex = 0;
-                    score = 0;
-                    updateStars(0);
                     loadWord();
+                    updateInstructions();
                 });
             });
-            
+
             // Game functions
             function loadWord() {
-                const currentWord = currentWords[currentIndex];
-                
-                // Update clue
-                clueBox.innerHTML = `<div class="clue-emoji">${currentWord.emoji}</div>`;
-                
-                // Clear input
+                currentWord = currentWords[currentIndex];
+                clueContent.textContent = currentWord.emoji || currentWord.text;
                 answerInput.value = '';
-                messageDiv.className = 'message';
                 messageDiv.textContent = '';
+                messageDiv.className = 'message';
                 
                 // Update progress
                 progressText.textContent = `${currentIndex + 1}/${currentWords.length}`;
                 progressFill.style.width = `${(currentIndex / (currentWords.length - 1)) * 100}%`;
                 
-                // Handle character tiles for Chinese words
+                // Setup character tiles for Chinese sentences or multi-character words
                 characterTiles.innerHTML = '';
-                
-                if (currentLanguage === 'zh' && currentWord.word.length > 1) {
-                    characterTiles.style.display = 'flex';
+                if (currentLanguage === 'zh' && 
+                   (currentWord.type === 'sentence' || 
+                   (currentWord.type === 'character' && currentWord.text.length > 1))) {
                     
-                    // Create tiles for each character
-                    const characters = currentWord.word.split('');
-                    characters.forEach(char => {
+                    const chars = currentWord.text.split('');
+                    chars.forEach(char => {
                         const tile = document.createElement('div');
                         tile.className = 'character-tile';
                         tile.textContent = char;
@@ -432,97 +369,125 @@
                         });
                         characterTiles.appendChild(tile);
                     });
-                } else {
-                    characterTiles.style.display = 'none';
                 }
                 
-                // Focus input
-                answerInput.focus();
+                // Update placeholder text based on language
+                answerInput.placeholder = currentLanguage === 'zh' ? '输入汉字...' : 
+                                         currentLanguage === 'ms' ? 'Taip jawapan...' : 
+                                         'Type your answer...';
+                                         
+                // Update button texts
+                checkBtn.textContent = currentLanguage === 'zh' ? '检查' : 
+                                      currentLanguage === 'ms' ? 'Semak' : 
+                                      'Check';
+                hintBtn.textContent = currentLanguage === 'zh' ? '提示' : 
+                                     currentLanguage === 'ms' ? 'Petunjuk' : 
+                                     'Hint';
+                speakBtn.textContent = currentLanguage === 'zh' ? '发音' : 
+                                      currentLanguage === 'ms' ? 'Dengarkan' : 
+                                      'Say It';
             }
-            
+
+            function updateInstructions() {
+                instructionsDiv.innerHTML = instructions[currentLanguage];
+            }
+
             function checkAnswer() {
-                const currentWord = currentWords[currentIndex];
-                const userAnswer = answerInput.value.trim().toLowerCase();
-                let correctAnswer;
+                const userAnswer = answerInput.value.trim();
+                let correctAnswer = currentWord.text;
                 
-                if (currentWord.sentence) {
-                    correctAnswer = currentWord.word.toLowerCase();
-                } else {
-                    correctAnswer = currentWord.word.toLowerCase();
+                // For non-Chinese sentences, ignore case and punctuation
+                if (currentLanguage !== 'zh' && currentWord.type === 'sentence') {
+                    const normalizedUser = userAnswer.toLowerCase().replace(/[.,!?]/g, '');
+                    const normalizedCorrect = correctAnswer.toLowerCase().replace(/[.,!?]/g, '');
+                    if (normalizedUser === normalizedCorrect) {
+                        showCorrect();
+                        return;
+                    }
                 }
                 
                 if (userAnswer === correctAnswer) {
-                    // Correct answer
-                    messageDiv.textContent = `Correct! ${currentLanguage === 'zh' ? currentWord.meaning || '' : ''}`;
-                    messageDiv.className = 'message correct';
-                    
-                    // Update score
-                    score += 10;
-                    stars = Math.floor(score / (currentWords.length * 3.33));
-                    updateStars(stars);
-                    
-                    // Show confetti
-                    showConfetti();
-                    
-                    // Move to next word after delay
-                    setTimeout(() => {
-                        if (currentIndex < currentWords.length - 1) {
-                            currentIndex++;
-                            loadWord();
-                        } else {
-                            messageDiv.textContent = 'Great job! You completed all the words! 🎉';
-                            messageDiv.className = 'message correct';
-                        }
-                    }, 1500);
+                    showCorrect();
                 } else {
-                    // Wrong answer
-                    messageDiv.textContent = 'Try again!';
-                    messageDiv.className = 'message wrong';
-                    
-                    // Shake animation
-                    answerInput.style.animation = 'shake 0.5s';
-                    setTimeout(() => {
-                        answerInput.style.animation = '';
-                    }, 500);
+                    showIncorrect();
                 }
             }
             
-            function showHint() {
-                const currentWord = currentWords[currentIndex];
-                
+            function showCorrect() {
+                let message = '';
                 if (currentLanguage === 'zh') {
-                    messageDiv.textContent = `Hint: ${currentWord.pinyin} (${currentWord.meaning})`;
+                    message = `正确! ${currentWord.pinyin} (${currentWord.meaning})`;
+                } else if (currentLanguage === 'ms') {
+                    message = 'Betul! ' + currentWord.text;
                 } else {
-                    messageDiv.textContent = `Hint: ${currentWord.hint}`;
+                    message = 'Correct! ' + currentWord.text;
                 }
                 
+                messageDiv.textContent = message;
+                messageDiv.className = 'message correct';
+                showConfetti();
+                
+                setTimeout(() => {
+                    if (currentIndex < currentWords.length - 1) {
+                        currentIndex++;
+                        loadWord();
+                    } else {
+                        const completionMsg = currentLanguage === 'zh' ? '完成! 太棒了!' :
+                                            currentLanguage === 'ms' ? 'Syabas! Anda sudah selesai!' :
+                                            'Great job! You completed all words!';
+                        messageDiv.textContent = completionMsg;
+                    }
+                }, 1500);
+            }
+            
+            function showIncorrect() {
+                const tryAgainMsg = currentLanguage === 'zh' ? '再试一次!' :
+                                  currentLanguage === 'ms' ? 'Cuba lagi!' :
+                                  'Try again!';
+                messageDiv.textContent = tryAgainMsg;
+                messageDiv.className = 'message wrong';
+                
+                // Shake animation
+                answerInput.style.animation = 'shake 0.5s';
+                setTimeout(() => {
+                    answerInput.style.animation = '';
+                }, 500);
+            }
+
+            function showHint() {
+                let hint = '';
+                if (currentLanguage === 'zh') {
+                    hint = `${currentWord.pinyin} (${currentWord.meaning})`;
+                } else {
+                    hint = currentWord.hint;
+                }
+                messageDiv.textContent = `Hint: ${hint}`;
                 messageDiv.className = 'message';
             }
-            
+
             function speakWord() {
-                const currentWord = currentWords[currentIndex];
-                const text = currentWord.sentence ? currentWord.word : currentWord.word;
-                const lang = currentLanguage === 'en' ? 'en-US' : 
-                             currentLanguage === 'ms' ? 'ms-MY' : 'zh-CN';
-                
                 if ('speechSynthesis' in window) {
-                    const utterance = new SpeechSynthesisUtterance(text);
-                    utterance.lang = lang;
-                    utterance.rate = 0.9;
-                    window.speechSynthesis.speak(utterance);
+                    const utterance = new SpeechSynthesisUtterance(currentWord.text);
+                    
+                    // Set language based on current selection
+                    if (currentLanguage === 'zh') {
+                        utterance.lang = 'zh-CN';
+                        utterance.rate = 0.8;
+                    } else if (currentLanguage === 'ms') {
+                        utterance.lang = 'ms-MY';
+                    } else {
+                        utterance.lang = 'en-US';
+                    }
+                    
+                    speechSynthesis.speak(utterance);
                 } else {
-                    messageDiv.textContent = 'Speech not supported in your browser';
+                    messageDiv.textContent = currentLanguage === 'zh' ? '浏览器不支持语音' :
+                                            currentLanguage === 'ms' ? 'Penyuara tidak disokong' :
+                                            'Speech not supported';
                     messageDiv.className = 'message';
                 }
             }
-            
-            function updateStars(count) {
-                const stars = document.querySelectorAll('.star');
-                stars.forEach((star, index) => {
-                    star.textContent = index < count ? '⭐' : '☆';
-                });
-            }
-            
+
             function showConfetti() {
                 confettiCanvas.style.display = 'block';
                 const ctx = confettiCanvas.getContext('2d');
